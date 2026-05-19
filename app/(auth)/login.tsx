@@ -3,7 +3,7 @@ import {
   View, Text, TextInput, TouchableOpacity,
   StyleSheet, KeyboardAvoidingView, Platform,
 } from 'react-native';
-import { router } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
 import { useAuth } from '@/context/AuthContext';
 
 type FieldErrors = {
@@ -18,8 +18,10 @@ function isValidEmail(email: string) {
 
 export default function LoginScreen() {
   const { signIn } = useAuth();
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+  const params = useLocalSearchParams<{ email?: string; password?: string }>();
+
+  const [email, setEmail] = useState(params.email ?? '');
+  const [password, setPassword] = useState(params.password ?? '');
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState<FieldErrors>({});
 
@@ -62,32 +64,31 @@ export default function LoginScreen() {
         <Text style={styles.subtitle}>YOUR AI WARDROBE STYLIST</Text>
 
         <View style={styles.form}>
-          {/* Email */}
           <Text style={styles.label}>EMAIL</Text>
           <TextInput
             style={[styles.input, errors.email ? styles.inputError : null]}
             value={email}
             onChangeText={(v) => { setEmail(v); setErrors((e) => ({ ...e, email: undefined })); }}
             placeholder="your@email.com"
-            placeholderTextColor="#333"
+            placeholderTextColor="#555555"
             autoCapitalize="none"
             keyboardType="email-address"
+            cursorColor="#9CE41C"
           />
           {errors.email && <Text style={styles.errorText}>{errors.email}</Text>}
 
-          {/* Password */}
           <Text style={[styles.label, { marginTop: 16 }]}>PASSWORD</Text>
           <TextInput
             style={[styles.input, errors.password ? styles.inputError : null]}
             value={password}
             onChangeText={(v) => { setPassword(v); setErrors((e) => ({ ...e, password: undefined })); }}
             placeholder="••••••••"
-            placeholderTextColor="#333"
+            placeholderTextColor="#555555"
             secureTextEntry
+            cursorColor="#9CE41C"
           />
           {errors.password && <Text style={styles.errorText}>{errors.password}</Text>}
 
-          {/* General error */}
           {errors.general && (
             <View style={styles.generalError}>
               <Text style={styles.errorText}>{errors.general}</Text>
@@ -119,11 +120,11 @@ const styles = StyleSheet.create({
     letterSpacing: 8, textAlign: 'center', marginBottom: 4,
   },
   subtitle: {
-    fontSize: 10, color: '#444', letterSpacing: 3,
+    fontSize: 10, color: '#888888', letterSpacing: 3,
     textAlign: 'center', marginBottom: 48,
   },
   form: {},
-  label: { fontSize: 10, color: '#666', letterSpacing: 2, marginBottom: 6 },
+  label: { fontSize: 10, color: '#999999', letterSpacing: 2, marginBottom: 6 },
   input: {
     backgroundColor: '#111', borderWidth: 1, borderColor: '#222',
     color: '#fff', paddingHorizontal: 16, paddingVertical: 14, fontSize: 14,
@@ -137,5 +138,5 @@ const styles = StyleSheet.create({
   },
   btnDisabled: { opacity: 0.5 },
   btnText: { color: '#0a0a0a', fontWeight: '800', fontSize: 13, letterSpacing: 2 },
-  link: { color: '#444', fontSize: 10, letterSpacing: 1.5, textAlign: 'center', marginTop: 24 },
+  link: { color: '#666666', fontSize: 10, letterSpacing: 1.5, textAlign: 'center', marginTop: 24 },
 });

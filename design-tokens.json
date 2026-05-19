@@ -1,0 +1,140 @@
+{
+  "global": {
+    "color": {
+      "background": {
+        "primary": { "value": "#0a0a0a", "type": "color", "description": "主背景" },
+        "card": { "value": "#111111", "type": "color", "description": "卡片背景" },
+        "elevated": { "value": "#1a1a1a", "type": "color", "description": "浮起層背景" }
+      },
+      "border": {
+        "default": { "value": "#222222", "type": "color" },
+        "subtle": { "value": "#1a1a1a", "type": "color" },
+        "dashed": { "value": "#555555", "type": "color", "description": "虛線框，引導用戶點擊" },
+        "error": { "value": "#ff4444", "type": "color" }
+      },
+      "brand": {
+        "primary": { "value": "#9CE41C", "type": "color", "description": "主色 — CTA、active、accent" }
+      },
+      "text": {
+        "primary": { "value": "#ffffff", "type": "color", "description": "主要文字" },
+        "secondary": { "value": "#888888", "type": "color", "description": "次要說明文字" },
+        "label": { "value": "#999999", "type": "color", "description": "欄位 label、全大寫小標題" },
+        "placeholder": { "value": "#666666", "type": "color", "description": "Input placeholder" },
+        "link": { "value": "#666666", "type": "color", "description": "次要連結、SKIP 等" },
+        "disabled": { "value": "#555555", "type": "color", "description": "停用狀態" },
+        "on-brand": { "value": "#0a0a0a", "type": "color", "description": "品牌綠色上的文字" }
+      },
+      "feedback": {
+        "error": { "value": "#ff4444", "type": "color" },
+        "success": { "value": "#9CE41C", "type": "color" },
+        "warning": { "value": "#ff9900", "type": "color" }
+      }
+    },
+    "typography": {
+      "display": {
+        "fontSize": { "value": "48", "type": "fontSizes", "description": "DRIP logo" },
+        "fontWeight": { "value": "900", "type": "fontWeights" },
+        "letterSpacing": { "value": "8", "type": "letterSpacing" }
+      },
+      "heading-xl": {
+        "fontSize": { "value": "40", "type": "fontSizes", "description": "主標題 TODAY'S LOOK" },
+        "fontWeight": { "value": "900", "type": "fontWeights" },
+        "letterSpacing": { "value": "-1", "type": "letterSpacing" },
+        "lineHeight": { "value": "44", "type": "lineHeights" }
+      },
+      "heading-lg": {
+        "fontSize": { "value": "32", "type": "fontSizes", "description": "次標題" },
+        "fontWeight": { "value": "900", "type": "fontWeights" },
+        "letterSpacing": { "value": "-0.5", "type": "letterSpacing" },
+        "lineHeight": { "value": "36", "type": "lineHeights" }
+      },
+      "heading-md": {
+        "fontSize": { "value": "22", "type": "fontSizes", "description": "卡片標題" },
+        "fontWeight": { "value": "800", "type": "fontWeights" },
+        "letterSpacing": { "value": "1", "type": "letterSpacing" }
+      },
+      "body": {
+        "fontSize": { "value": "16", "type": "fontSizes", "description": "主要內文" },
+        "fontWeight": { "value": "400", "type": "fontWeights" },
+        "lineHeight": { "value": "24", "type": "lineHeights" }
+      },
+      "body-sm": {
+        "fontSize": { "value": "14", "type": "fontSizes", "description": "次要內文 — 最小字級" },
+        "fontWeight": { "value": "400", "type": "fontWeights" },
+        "lineHeight": { "value": "22", "type": "lineHeights" }
+      },
+      "label": {
+        "fontSize": { "value": "14", "type": "fontSizes", "description": "欄位 label、全大寫小標題" },
+        "fontWeight": { "value": "600", "type": "fontWeights" },
+        "letterSpacing": { "value": "2", "type": "letterSpacing" }
+      },
+      "button": {
+        "fontSize": { "value": "14", "type": "fontSizes", "description": "按鈕文字" },
+        "fontWeight": { "value": "800", "type": "fontWeights" },
+        "letterSpacing": { "value": "2", "type": "letterSpacing" }
+      },
+      "caption": {
+        "fontSize": { "value": "14", "type": "fontSizes", "description": "錯誤提示、輔助說明" },
+        "fontWeight": { "value": "400", "type": "fontWeights" },
+        "letterSpacing": { "value": "0.5", "type": "letterSpacing" }
+      }
+    },
+    "spacing": {
+      "xs": { "value": "4", "type": "spacing" },
+      "sm": { "value": "8", "type": "spacing" },
+      "md": { "value": "16", "type": "spacing" },
+      "lg": { "value": "24", "type": "spacing" },
+      "xl": { "value": "32", "type": "spacing" },
+      "2xl": { "value": "48", "type": "spacing" },
+      "3xl": { "value": "60", "type": "spacing" }
+    },
+    "borderRadius": {
+      "none": { "value": "0", "type": "borderRadius", "description": "按鈕、卡片全直角" },
+      "sm": { "value": "4", "type": "borderRadius" },
+      "md": { "value": "12", "type": "borderRadius" },
+      "lg": { "value": "16", "type": "borderRadius" }
+    },
+    "component": {
+      "button-primary": {
+        "background": { "value": "{color.brand.primary}", "type": "color" },
+        "text": { "value": "{color.text.on-brand}", "type": "color" },
+        "fontSize": { "value": "{typography.button.fontSize}", "type": "fontSizes" },
+        "paddingVertical": { "value": "18", "type": "spacing" },
+        "borderRadius": { "value": "{borderRadius.none}", "type": "borderRadius" }
+      },
+      "button-secondary": {
+        "background": { "value": "transparent", "type": "color" },
+        "text": { "value": "{color.text.link}", "type": "color" },
+        "fontSize": { "value": "{typography.button.fontSize}", "type": "fontSizes" },
+        "border": { "value": "{color.border.default}", "type": "color" }
+      },
+      "input": {
+        "background": { "value": "#111111", "type": "color" },
+        "border": { "value": "{color.border.default}", "type": "color" },
+        "border-error": { "value": "{color.border.error}", "type": "color" },
+        "text": { "value": "{color.text.primary}", "type": "color" },
+        "placeholder": { "value": "{color.text.placeholder}", "type": "color" },
+        "cursor": { "value": "{color.brand.primary}", "type": "color" },
+        "fontSize": { "value": "14", "type": "fontSizes" },
+        "paddingHorizontal": { "value": "16", "type": "spacing" },
+        "paddingVertical": { "value": "14", "type": "spacing" }
+      },
+      "card": {
+        "background": { "value": "{color.background.card}", "type": "color" },
+        "border": { "value": "{color.border.subtle}", "type": "color" },
+        "borderRadius": { "value": "{borderRadius.lg}", "type": "borderRadius" }
+      },
+      "tab-bar": {
+        "background": { "value": "{color.background.primary}", "type": "color" },
+        "border": { "value": "{color.border.subtle}", "type": "color" },
+        "active": { "value": "{color.brand.primary}", "type": "color" },
+        "inactive": { "value": "{color.text.disabled}", "type": "color" },
+        "fontSize": { "value": "14", "type": "fontSizes" }
+      },
+      "dashed-zone": {
+        "border": { "value": "{color.border.dashed}", "type": "color" },
+        "description": "虛線點擊引導區域，如上傳照片、新增衣物"
+      }
+    }
+  }
+}
