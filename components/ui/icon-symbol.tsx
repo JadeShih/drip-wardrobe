@@ -20,6 +20,9 @@ const MAPPING = {
   'chevron.right': 'chevron-right',
   'camera.fill': 'camera-alt',
   'photo.on.rectangle': 'photo-library',
+  'hanger': 'checkroom',
+  'plus': 'add',
+  'person.fill': 'person',
 } as IconMapping;
 
 /**
