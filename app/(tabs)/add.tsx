@@ -10,7 +10,7 @@ import { useAuth } from '@/context/AuthContext';
 import { supabase } from '@/lib/supabase';
 import { IconSymbol } from '@/components/ui/icon-symbol';
 
-const CATEGORIES = ['上衣', '下身', '外套', '鞋子', '配件', '連身'];
+const CATEGORIES = ['上衣', '下著', '外套', '鞋子', '配件'];
 
 export default function AddScreen() {
   const { user } = useAuth();
@@ -24,12 +24,12 @@ export default function AddScreen() {
       Alert.alert('需要相機權限', '請在設定中允許相機存取');
       return;
     }
-    const result = await ImagePicker.launchCameraAsync({ allowsEditing: true, quality: 0.8 });
+    const result = await ImagePicker.launchCameraAsync({ allowsEditing: false, quality: 0.8 });
     if (!result.canceled) setPhoto(result.assets[0].uri);
   }
 
   async function pickPhoto() {
-    const result = await ImagePicker.launchImageLibraryAsync({ allowsEditing: true, quality: 0.8 });
+    const result = await ImagePicker.launchImageLibraryAsync({ allowsEditing: false, quality: 0.8 });
     if (!result.canceled) setPhoto(result.assets[0].uri);
   }
 
@@ -37,29 +37,40 @@ export default function AddScreen() {
     if (!photo || !category || !user) return;
     setUploading(true);
     try {
-      const ext = photo.split('.').pop();
+      const ext = photo.split('.').pop()?.split('?')[0] ?? 'jpg';
       const fileName = `${Date.now()}.${ext}`;
       const path = `${user.id}/wardrobe/${fileName}`;
-      const response = await fetch(photo);
-      const blob = await response.blob();
-      await supabase.storage.from('wardrobe').upload(path, blob, { upsert: false });
+
+      const formData = new FormData();
+      formData.append('file', { uri: photo, name: fileName, type: `image/${ext}` } as any);
+
+      const { error: uploadError } = await supabase.storage
+        .from('wardrobe')
+        .upload(path, formData);
+      if (uploadError) throw uploadError;
+
       const { data } = supabase.storage.from('wardrobe').getPublicUrl(path);
-      await supabase.from('wardrobe_items').insert({
+
+      const { error: insertError } = await supabase.from('wardrobe_items').insert({
         user_id: user.id,
-        image_url: data.publicUrl,
+        photo_url: data.publicUrl,
         category,
+        name: category,
       });
-      await supabase.from('analytics_events').insert({
+      if (insertError) throw insertError;
+
+      supabase.from('analytics_events').insert({
         user_id: user.id,
         event: 'wardrobe_item_added',
         properties: { category },
       });
+
       setPhoto(null);
       setCategory('');
       router.replace('/(tabs)/wardrobe');
-    } catch (e) {
-      console.error(e);
-      Alert.alert('上傳失敗', '請稍後再試');
+    } catch (e: any) {
+      console.error('saveItem error:', e);
+      Alert.alert('上傳失敗', e?.message ?? '請稍後再試');
     }
     setUploading(false);
   }
