@@ -23,6 +23,10 @@ const MAPPING = {
   'hanger': 'checkroom',
   'plus': 'add',
   'person.fill': 'person',
+  'trash': 'delete',
+  'pencil': 'edit',
+  'tshirt': 'checkroom',
+  'tag': 'label',
 } as IconMapping;
 
 /**

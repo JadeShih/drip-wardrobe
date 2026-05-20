@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import {
-  View, Text, TouchableOpacity, StyleSheet,
+  View, Text, TextInput, TouchableOpacity, StyleSheet,
   ScrollView, Image, Alert, ActivityIndicator,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -15,6 +15,8 @@ const CATEGORIES = ['上衣', '下著', '外套', '鞋子', '配件'];
 export default function AddScreen() {
   const { user } = useAuth();
   const [photo, setPhoto] = useState<string | null>(null);
+  const [name, setName] = useState('');
+  const [brand, setBrand] = useState('');
   const [category, setCategory] = useState('');
   const [uploading, setUploading] = useState(false);
 
@@ -34,7 +36,7 @@ export default function AddScreen() {
   }
 
   async function saveItem() {
-    if (!photo || !category || !user) return;
+    if (!photo || !name.trim() || !category || !user) return;
     setUploading(true);
     try {
       const ext = photo.split('.').pop()?.split('?')[0] ?? 'jpg';
@@ -55,17 +57,20 @@ export default function AddScreen() {
         user_id: user.id,
         photo_url: data.publicUrl,
         category,
-        name: category,
+        name: name.trim(),
+        brand: brand.trim() || null,
       });
       if (insertError) throw insertError;
 
       supabase.from('analytics_events').insert({
         user_id: user.id,
         event: 'wardrobe_item_added',
-        properties: { category },
+        properties: { category, name: name.trim() },
       });
 
       setPhoto(null);
+      setName('');
+      setBrand('');
       setCategory('');
       router.replace('/(tabs)/wardrobe');
     } catch (e: any) {
@@ -75,7 +80,7 @@ export default function AddScreen() {
     setUploading(false);
   }
 
-  const canSave = photo && category && !uploading;
+  const canSave = photo && name.trim() && category && !uploading;
 
   return (
     <SafeAreaView style={styles.container}>
@@ -107,6 +112,30 @@ export default function AddScreen() {
             </TouchableOpacity>
           </View>
         )}
+
+        {/* Name */}
+        <Text style={styles.sectionLabel}>名稱</Text>
+        <TextInput
+          style={styles.input}
+          value={name}
+          onChangeText={setName}
+          placeholder="例：白色牛津衫"
+          placeholderTextColor="#444"
+          cursorColor="#9CE41C"
+          selectionColor="#9CE41C"
+        />
+
+        {/* Brand */}
+        <Text style={styles.sectionLabel}>品牌（選填）</Text>
+        <TextInput
+          style={styles.input}
+          value={brand}
+          onChangeText={setBrand}
+          placeholder="例：Uniqlo"
+          placeholderTextColor="#444"
+          cursorColor="#9CE41C"
+          selectionColor="#9CE41C"
+        />
 
         {/* Category */}
         <Text style={styles.sectionLabel}>類別</Text>
@@ -160,7 +189,13 @@ const styles = StyleSheet.create({
   },
   previewChange: { fontSize: 14, color: '#aaaaaa', letterSpacing: 1 },
 
-  sectionLabel: { fontSize: 14, color: '#666666', letterSpacing: 2, marginBottom: 16 },
+  sectionLabel: { fontSize: 14, color: '#666666', letterSpacing: 2, marginBottom: 12 },
+  input: {
+    borderWidth: 1, borderColor: '#333333',
+    paddingHorizontal: 16, paddingVertical: 14,
+    fontSize: 14, color: '#fff', marginBottom: 24, letterSpacing: 0.5,
+  },
+
   chips: { flexDirection: 'row', flexWrap: 'wrap', gap: 10, marginBottom: 40 },
   chip: { paddingHorizontal: 20, paddingVertical: 12, borderWidth: 1, borderColor: '#333333' },
   chipActive: { borderColor: '#9CE41C', backgroundColor: '#9CE41C' },
