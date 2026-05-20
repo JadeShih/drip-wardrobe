@@ -232,10 +232,10 @@ export default function HomeScreen() {
                 top={FIG_TOP + topFrac * FIG_H}
               />
             ))}
-          </View> {/* end figure container */}
+          </View>
 
           {/* Item count */}
-          <Text style={styles.itemCount}>{totalItems} ITEMS IN YOUR CLOSET</Text>
+          <Text style={styles.itemCount}>{`${totalItems} ITEMS IN YOUR CLOSET`}</Text>
 
           {/* CTA */}
           {totalItems === 0 ? (
@@ -338,7 +338,7 @@ export default function HomeScreen() {
         <View style={styles.generatingState}>
           <ActivityIndicator color="#9CE41C" size="large" />
           <Text style={styles.generatingText}>正在為你搭配…</Text>
-          <Text style={styles.generatingSub}>{occasion} × {vibe}</Text>
+          <Text style={styles.generatingSub}>{`${occasion} × ${vibe}`}</Text>
         </View>
       </SafeAreaView>
     );
@@ -352,7 +352,7 @@ export default function HomeScreen() {
           <TouchableOpacity onPress={reset}>
             <Text style={styles.back}>← 重新選擇</Text>
           </TouchableOpacity>
-          <Text style={styles.resultTag}>{occasion} × {vibe}</Text>
+          <Text style={styles.resultTag}>{`${occasion} × ${vibe}`}</Text>
         </View>
 
         <Text style={styles.stepTitle}>今日穿搭</Text>
