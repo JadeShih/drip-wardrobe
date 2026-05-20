@@ -12,18 +12,20 @@ import { IconSymbol } from '@/components/ui/icon-symbol';
 
 const { width: W } = Dimensions.get('window');
 
-// Figure geometry
-const FIG_W = 90;
-const FIG_H = 400;
-const FIG_LEFT = (W - FIG_W) / 2;
-const FIG_RIGHT = FIG_LEFT + FIG_W;
-const LABEL_W = 110;
-const H_PAD = 8;
+// Content width (after paddingHorizontal: 24 on each side)
+const CONTENT_W = W - 48;
 
-// Left line: from LABEL_W+H_PAD to FIG_LEFT
-const LEFT_LINE_W = Math.max(FIG_LEFT - LABEL_W - H_PAD, 10);
-// Right line: from FIG_RIGHT to W - LABEL_W - H_PAD
-const RIGHT_LINE_W = Math.max(W - H_PAD - LABEL_W - FIG_RIGHT, 10);
+// Figure geometry — works within content bounds (no negative margin needed)
+const FIG_W = 130;
+const FIG_H = 420;
+const FIG_LEFT = (CONTENT_W - FIG_W) / 2;   // centre within content
+const FIG_RIGHT = FIG_LEFT + FIG_W;
+const LABEL_W = 100;
+const H_PAD = 0;
+
+// Line widths bridging label to figure edge
+const LEFT_LINE_W = Math.max(FIG_LEFT - LABEL_W - H_PAD, 12);
+const RIGHT_LINE_W = Math.max(CONTENT_W - FIG_RIGHT - LABEL_W - H_PAD, 12);
 
 const LABEL_DEFS: { cat: string; side: 'left' | 'right'; topFrac: number }[] = [
   { cat: '外套', side: 'right', topFrac: 0.08 },
@@ -203,8 +205,8 @@ export default function HomeScreen() {
             {firstName ? <Text style={styles.greeting}>嗨，{firstName}</Text> : null}
           </View>
 
-          {/* Figure container */}
-          <View style={[styles.figureContainer, { height: FIG_CONTAINER_H }]}>
+          {/* Figure container — stays within content padding, no negative margin */}
+          <View style={{ height: FIG_CONTAINER_H, position: 'relative' }}>
             <GridBg height={FIG_CONTAINER_H} />
 
             {/* Body figure */}
@@ -215,7 +217,7 @@ export default function HomeScreen() {
                 <Image source={{ uri: bodyPhotoUrl }} style={styles.bodyPhoto} />
               ) : (
                 <View style={styles.silhouette}>
-                  <IconSymbol name="person.fill" size={80} color="#1e1e1e" />
+                  <IconSymbol name="person.fill" size={FIG_W - 10} color="#2a2a2a" />
                 </View>
               )}
             </View>
@@ -230,7 +232,7 @@ export default function HomeScreen() {
                 top={FIG_TOP + topFrac * FIG_H}
               />
             ))}
-          </View>
+          </View> {/* end figure container */}
 
           {/* Item count */}
           <Text style={styles.itemCount}>{totalItems} ITEMS IN YOUR CLOSET</Text>
@@ -391,11 +393,11 @@ const styles = StyleSheet.create({
 
   // Figure map
   figureContainer: { position: 'relative', marginHorizontal: -24, overflow: 'hidden' },
-  figureWrap: { position: 'absolute', overflow: 'hidden' },
+  figureWrap: { position: 'absolute', overflow: 'hidden', backgroundColor: '#111111' },
   bodyPhoto: { width: '100%', height: '100%', resizeMode: 'cover' },
   silhouette: {
     flex: 1, alignItems: 'center', justifyContent: 'center',
-    backgroundColor: '#111111',
+    backgroundColor: '#141414',
   },
 
   // Labels
