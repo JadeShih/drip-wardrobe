@@ -197,22 +197,33 @@ export default function HomeScreen() {
 
       const prompt = `你是一位時尚造型師。用戶的衣櫃有：\n${wardrobeLines}\n\n場合：${occasion}\n氣圍：${vibe}\n\n請從衣櫃中選出最適合的單品組合，並給出簡短的穿搭建議。\n\n請回傳 JSON 格式（不要有其他文字）：\n{\n  "title": "穿搭標題（10字內）",\n  "selected_categories": ["上衣", "下著"],\n  "notes": "穿搭建議（50字內）"\n}`;
 
+      const apiKey = process.env.EXPO_PUBLIC_OPENAI_API_KEY;
+      if (!apiKey) throw new Error('API key not configured');
+
       const res = await fetch('https://api.openai.com/v1/chat/completions', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${process.env.EXPO_PUBLIC_OPENAI_API_KEY}`,
+          'Authorization': `Bearer ${apiKey}`,
         },
         body: JSON.stringify({
           model: 'gpt-4o-mini',
           messages: [{ role: 'user', content: prompt }],
           response_format: { type: 'json_object' },
-          max_tokens: 200,
+          max_tokens: 300,
         }),
       });
 
+      if (!res.ok) {
+        const errText = await res.text();
+        throw new Error(`OpenAI ${res.status}: ${errText}`);
+      }
+
       const json = await res.json();
-      const content = JSON.parse(json.choices[0].message.content);
+      const rawContent = json?.choices?.[0]?.message?.content;
+      if (!rawContent) throw new Error('Empty response from OpenAI');
+
+      const content = JSON.parse(rawContent);
       const selectedCats: string[] = content.selected_categories ?? [];
 
       const result: OutfitResult = {
