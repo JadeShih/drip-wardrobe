@@ -38,7 +38,14 @@ const OCCASIONS = ['日常', '上班', '約會', '運動', '聚會', '旅行'];
 const VIBES = ['輕鬆', '正式', '帥氣', '優雅', '休閒'];
 
 type Step = 'map' | 'occasion' | 'vibe' | 'generating' | 'result';
-type WardrobeMap = Record<string, { name: string; brand: string | null }>;
+type WardrobeItem = { name: string; brand: string | null; photo_url: string | null };
+type WardrobeMap = Record<string, WardrobeItem>;
+
+type OutfitResult = {
+  selected: { category: string; item: WardrobeItem }[];
+  notes: string;
+  title: string;
+};
 
 // ── Grid background ──────────────────────────────────────────────────────────
 const GRID_COL_COUNT = 9;
@@ -131,7 +138,7 @@ export default function HomeScreen() {
   const [step, setStep] = useState<Step>('map');
   const [occasion, setOccasion] = useState('');
   const [vibe, setVibe] = useState('');
-  const [outfitDesc, setOutfitDesc] = useState('');
+  const [outfitResult, setOutfitResult] = useState<OutfitResult | null>(null);
 
   const firstName = user?.user_metadata?.full_name?.split(' ')[0] ?? '';
 
@@ -147,7 +154,7 @@ export default function HomeScreen() {
 
       const { data: items } = await supabase
         .from('wardrobe_items')
-        .select('category, name, brand')
+        .select('category, name, brand, photo_url')
         .eq('user_id', user.id)
         .order('created_at', { ascending: false });
 
@@ -155,7 +162,13 @@ export default function HomeScreen() {
         setTotalItems(items.length);
         const map: WardrobeMap = {};
         items.forEach(item => {
-          if (!map[item.category]) map[item.category] = { name: item.name, brand: item.brand };
+          if (!map[item.category]) {
+            map[item.category] = {
+              name: item.name,
+              brand: item.brand ?? null,
+              photo_url: item.photo_url ?? null,
+            };
+          }
         });
         setWardrobeMap(map);
       }
@@ -166,20 +179,65 @@ export default function HomeScreen() {
   async function generate() {
     if (!occasion || !vibe || !user) return;
     setStep('generating');
-    await supabase.from('analytics_events').insert({
+
+    supabase.from('analytics_events').insert({
       user_id: user.id,
       event: 'outfit_generate_requested',
       properties: { occasion, vibe },
     });
-    // TODO: Claude API call
-    setTimeout(() => {
-      setOutfitDesc(`${occasion} × ${vibe} 穿搭已生成`);
-      setStep('result');
-    }, 1800);
+
+    try {
+      // Build wardrobe summary for the prompt
+      const wardrobeLines = Object.entries(wardrobeMap)
+        .map(([cat, item]) => {
+          const brand = item.brand ? ` (${item.brand})` : '';
+          return `- ${cat}：${item.name}${brand}`;
+        })
+        .join('\n');
+
+      const prompt = `你是一位時尚造型師。用戶的衣櫃有：\n${wardrobeLines}\n\n場合：${occasion}\n氣圍：${vibe}\n\n請從衣櫃中選出最適合的單品組合，並給出簡短的穿搭建議。\n\n請回傳 JSON 格式（不要有其他文字）：\n{\n  "title": "穿搭標題（10字內）",\n  "selected_categories": ["上衣", "下著"],\n  "notes": "穿搭建議（50字內）"\n}`;
+
+      const res = await fetch('https://api.openai.com/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${process.env.EXPO_PUBLIC_OPENAI_API_KEY}`,
+        },
+        body: JSON.stringify({
+          model: 'gpt-4o-mini',
+          messages: [{ role: 'user', content: prompt }],
+          response_format: { type: 'json_object' },
+          max_tokens: 200,
+        }),
+      });
+
+      const json = await res.json();
+      const content = JSON.parse(json.choices[0].message.content);
+      const selectedCats: string[] = content.selected_categories ?? [];
+
+      const result: OutfitResult = {
+        title: content.title ?? `${occasion} 穿搭`,
+        notes: content.notes ?? '',
+        selected: selectedCats
+          .filter(cat => wardrobeMap[cat])
+          .map(cat => ({ category: cat, item: wardrobeMap[cat] })),
+      };
+
+      setOutfitResult(result);
+    } catch (e) {
+      console.error('generate error', e);
+      setOutfitResult({
+        title: `${occasion} 穿搭`,
+        notes: '穿搭建議生成失敗，請稍後再試。',
+        selected: [],
+      });
+    }
+
+    setStep('result');
   }
 
   function reset() {
-    setOccasion(''); setVibe(''); setOutfitDesc('');
+    setOccasion(''); setVibe(''); setOutfitResult(null);
     setStep('map');
   }
 
@@ -355,15 +413,39 @@ export default function HomeScreen() {
           <Text style={styles.resultTag}>{`${occasion} × ${vibe}`}</Text>
         </View>
 
-        <Text style={styles.stepTitle}>今日穿搭</Text>
+        <Text style={styles.stepTitle}>{outfitResult?.title ?? '今日穿搭'}</Text>
 
-        <View style={styles.outfitCard}>
+        {/* Selected item photos */}
+        {outfitResult && outfitResult.selected.length > 0 ? (
+          <View style={styles.outfitGrid}>
+            {outfitResult.selected.map(({ category, item }) => (
+              <View key={category} style={styles.outfitGridItem}>
+                {item.photo_url ? (
+                  <Image source={{ uri: item.photo_url }} style={styles.outfitItemPhoto} />
+                ) : (
+                  <View style={styles.outfitItemPlaceholder} />
+                )}
+                <View style={styles.outfitItemLabel}>
+                  <Text style={styles.outfitItemCat}>{category}</Text>
+                  <Text style={styles.outfitItemName} numberOfLines={1}>{item.name}</Text>
+                </View>
+              </View>
+            ))}
+          </View>
+        ) : (
           <View style={styles.outfitPlaceholder}>
             <View style={styles.outfitDot} />
             <Text style={styles.outfitPlaceholderText}>穿搭圖</Text>
           </View>
-          <Text style={styles.outfitDesc}>{outfitDesc}</Text>
-        </View>
+        )}
+
+        {/* Styling notes */}
+        {outfitResult?.notes ? (
+          <View style={styles.notesBox}>
+            <View style={styles.notesDot} />
+            <Text style={styles.notesText}>{outfitResult.notes}</Text>
+          </View>
+        ) : null}
 
         <View style={styles.resultActions}>
           <TouchableOpacity style={styles.saveBtn}>
@@ -443,14 +525,28 @@ const styles = StyleSheet.create({
   generatingSub: { fontSize: 14, color: '#666666', letterSpacing: 1 },
 
   // Result
-  outfitCard: { marginBottom: 24 },
+  outfitGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10, marginBottom: 20 },
+  outfitGridItem: { width: '47%' },
+  outfitItemPhoto: { width: '100%', aspectRatio: 3 / 4, resizeMode: 'cover', backgroundColor: '#1a1a1a' },
+  outfitItemPlaceholder: { width: '100%', aspectRatio: 3 / 4, backgroundColor: '#1a1a1a' },
+  outfitItemLabel: { paddingTop: 8, gap: 2, marginBottom: 8 },
+  outfitItemCat: { fontSize: 11, color: '#666666', letterSpacing: 1.5 },
+  outfitItemName: { fontSize: 14, fontWeight: '700', color: '#fff' },
+
   outfitPlaceholder: {
-    width: '100%', height: 360, backgroundColor: '#111111',
+    width: '100%', height: 260, backgroundColor: '#111111',
     alignItems: 'center', justifyContent: 'center', gap: 12, marginBottom: 16,
   },
   outfitDot: { width: 20, height: 20, backgroundColor: '#1e1e1e' },
   outfitPlaceholderText: { fontSize: 14, color: '#333333', letterSpacing: 2 },
-  outfitDesc: { fontSize: 14, color: '#888888', lineHeight: 22 },
+
+  notesBox: {
+    flexDirection: 'row', gap: 12, borderWidth: 1, borderColor: '#1e1e1e',
+    padding: 16, marginBottom: 24, alignItems: 'flex-start',
+  },
+  notesDot: { width: 6, height: 6, backgroundColor: '#9CE41C', marginTop: 4 },
+  notesText: { flex: 1, fontSize: 14, color: '#888888', lineHeight: 22 },
+
   resultActions: { flexDirection: 'row', gap: 12 },
   saveBtn: { flex: 1, backgroundColor: '#9CE41C', paddingVertical: 16, alignItems: 'center' },
   saveBtnText: { color: '#0a0a0a', fontWeight: '800', fontSize: 14, letterSpacing: 2 },
