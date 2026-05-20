@@ -1,5 +1,5 @@
 import { Tabs } from 'expo-router';
-import { View, StyleSheet } from 'react-native';
+import { View, StyleSheet, Text } from 'react-native';
 import { HapticTab } from '@/components/haptic-tab';
 import { IconSymbol } from '@/components/ui/icon-symbol';
 
@@ -12,35 +12,43 @@ export default function TabLayout() {
         tabBarStyle: styles.tabBar,
         tabBarActiveTintColor: '#9CE41C',
         tabBarInactiveTintColor: '#444444',
-        tabBarShowLabel: false,
+        tabBarShowLabel: true,
+        tabBarLabelStyle: styles.label,
       }}
     >
       <Tabs.Screen
         name="index"
         options={{
-          tabBarIcon: ({ color }) => <IconSymbol size={24} name="house.fill" color={color} />,
+          title: '主頁',
+          tabBarIcon: ({ color }) => <IconSymbol size={22} name="house.fill" color={color} />,
         }}
       />
       <Tabs.Screen
         name="wardrobe"
         options={{
-          tabBarIcon: ({ color }) => <IconSymbol size={24} name="hanger" color={color} />,
+          title: '衣櫃',
+          tabBarIcon: ({ color }) => <IconSymbol size={22} name="hanger" color={color} />,
         }}
       />
       <Tabs.Screen
         name="add"
         options={{
-          tabBarIcon: ({ focused }) => (
+          title: '新增',
+          tabBarIcon: () => (
             <View style={styles.addBtn}>
-              <IconSymbol size={22} name="plus" color="#0a0a0a" />
+              <IconSymbol size={20} name="plus" color="#0a0a0a" />
             </View>
+          ),
+          tabBarLabel: ({ color }) => (
+            <Text style={[styles.label, { color }]}>新增</Text>
           ),
         }}
       />
       <Tabs.Screen
         name="profile"
         options={{
-          tabBarIcon: ({ color }) => <IconSymbol size={24} name="person.fill" color={color} />,
+          title: '個人',
+          tabBarIcon: ({ color }) => <IconSymbol size={22} name="person.fill" color={color} />,
         }}
       />
     </Tabs>
@@ -52,16 +60,22 @@ const styles = StyleSheet.create({
     backgroundColor: '#111111',
     borderTopColor: '#1a1a1a',
     borderTopWidth: 1,
-    height: 80,
-    paddingBottom: 20,
-    paddingTop: 12,
+    height: 84,
+    paddingBottom: 18,
+    paddingTop: 8,
+  },
+  label: {
+    fontSize: 11,
+    fontWeight: '600',
+    letterSpacing: 0.5,
+    marginTop: 2,
   },
   addBtn: {
-    width: 48,
-    height: 48,
+    width: 44,
+    height: 44,
     backgroundColor: '#9CE41C',
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: 16,
+    marginBottom: 4,
   },
 });
