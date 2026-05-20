@@ -34,10 +34,12 @@ export default function TabLayout() {
         name="add"
         options={{
           title: '新增',
-          tabBarIcon: ({ focused }) => (
-            <View style={[styles.addBtn, focused ? styles.addBtnActive : styles.addBtnInactive]}>
-              <IconSymbol size={20} name="plus" color={focused ? '#0a0a0a' : '#444444'} />
+          tabBarIcon: ({ focused }) => focused ? (
+            <View style={[styles.addBtn, styles.addBtnActive]}>
+              <IconSymbol size={20} name="plus" color="#0a0a0a" />
             </View>
+          ) : (
+            <IconSymbol size={22} name="plus" color="#444444" />
           ),
           tabBarLabel: ({ color }) => (
             <Text style={[styles.label, { color }]}>新增</Text>
@@ -78,5 +80,4 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   addBtnActive: { backgroundColor: '#9CE41C' },
-  addBtnInactive: { backgroundColor: '#1e1e1e', borderWidth: 1, borderColor: '#333333' },
 });
