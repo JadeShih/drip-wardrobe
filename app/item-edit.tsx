@@ -1,12 +1,14 @@
 import { useState, useEffect } from 'react';
 import {
   View, Text, TextInput, TouchableOpacity,
-  StyleSheet, ScrollView, ActivityIndicator, Alert,
+  StyleSheet, ScrollView, ActivityIndicator, Alert, Image,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router, useLocalSearchParams } from 'expo-router';
+import * as ImagePicker from 'expo-image-picker';
 import { useAuth } from '@/context/AuthContext';
 import { supabase } from '@/lib/supabase';
+import { IconSymbol } from '@/components/ui/icon-symbol';
 
 const CATEGORIES = ['上衣', '下著', '外套', '鞋子', '配件'];
 
@@ -17,6 +19,8 @@ export default function ItemEditScreen() {
   const [name, setName] = useState('');
   const [category, setCategory] = useState('');
   const [brand, setBrand] = useState('');
+  const [existingPhotoUrl, setExistingPhotoUrl] = useState<string | null>(null);
+  const [newPhotoUri, setNewPhotoUri] = useState<string | null>(null); // local URI if user picked new photo
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
 
@@ -25,37 +29,72 @@ export default function ItemEditScreen() {
     (async () => {
       const { data } = await supabase
         .from('wardrobe_items')
-        .select('name, category, brand')
+        .select('name, category, brand, photo_url')
         .eq('id', id)
         .single();
       if (data) {
         setName(data.name ?? '');
         setCategory(data.category ?? '');
         setBrand(data.brand ?? '');
+        setExistingPhotoUrl(data.photo_url ?? null);
       }
       setLoading(false);
     })();
   }, [id]);
 
+  async function pickPhoto() {
+    const result = await ImagePicker.launchImageLibraryAsync({ allowsEditing: false, quality: 0.8 });
+    if (!result.canceled) setNewPhotoUri(result.assets[0].uri);
+  }
+
+  async function takePhoto() {
+    const { status } = await ImagePicker.requestCameraPermissionsAsync();
+    if (status !== 'granted') {
+      Alert.alert('需要相機權限', '請在設定中允許相機存取');
+      return;
+    }
+    const result = await ImagePicker.launchCameraAsync({ allowsEditing: false, quality: 0.8 });
+    if (!result.canceled) setNewPhotoUri(result.assets[0].uri);
+  }
+
   async function save() {
-    if (!name.trim() || !category) {
+    if (!name.trim() || !category || !user) {
       Alert.alert('請填寫名稱並選擇類別');
       return;
     }
     setSaving(true);
-    const { error } = await supabase
-      .from('wardrobe_items')
-      .update({
-        name: name.trim(),
-        category,
-        brand: brand.trim() || null,
-      })
-      .eq('id', id);
+    try {
+      let photoUrl = existingPhotoUrl;
 
-    if (error) {
-      Alert.alert('儲存失敗', error.message);
-    } else {
+      // Upload new photo if selected
+      if (newPhotoUri) {
+        const ext = newPhotoUri.split('.').pop()?.split('?')[0] ?? 'jpg';
+        const fileName = `${Date.now()}.${ext}`;
+        const path = `${user.id}/wardrobe/${fileName}`;
+        const formData = new FormData();
+        formData.append('file', { uri: newPhotoUri, name: fileName, type: `image/${ext}` } as any);
+        const { error: uploadError } = await supabase.storage
+          .from('wardrobe')
+          .upload(path, formData);
+        if (uploadError) throw uploadError;
+        const { data } = supabase.storage.from('wardrobe').getPublicUrl(path);
+        photoUrl = data.publicUrl;
+      }
+
+      const { error } = await supabase
+        .from('wardrobe_items')
+        .update({
+          name: name.trim(),
+          category,
+          brand: brand.trim() || null,
+          photo_url: photoUrl,
+        })
+        .eq('id', id);
+
+      if (error) throw error;
       router.back();
+    } catch (e: any) {
+      Alert.alert('儲存失敗', e?.message ?? '請稍後再試');
     }
     setSaving(false);
   }
@@ -67,6 +106,8 @@ export default function ItemEditScreen() {
       </SafeAreaView>
     );
   }
+
+  const displayPhoto = newPhotoUri ?? existingPhotoUrl;
 
   return (
     <SafeAreaView style={styles.container}>
@@ -80,6 +121,37 @@ export default function ItemEditScreen() {
 
         <Text style={styles.stepLabel}>編輯單品</Text>
         <Text style={styles.title}>更新資訊</Text>
+
+        {/* Photo */}
+        <Text style={styles.fieldLabel}>照片</Text>
+        {displayPhoto ? (
+          <View style={styles.previewWrap}>
+            <Image source={{ uri: displayPhoto }} style={styles.previewImg} />
+            {/* Change photo actions */}
+            <View style={styles.previewActions}>
+              <TouchableOpacity style={styles.previewBtn} onPress={takePhoto}>
+                <IconSymbol name="camera.fill" size={16} color="#9CE41C" />
+                <Text style={styles.previewBtnText}>拍攝</Text>
+              </TouchableOpacity>
+              <View style={styles.previewDivider} />
+              <TouchableOpacity style={styles.previewBtn} onPress={pickPhoto}>
+                <IconSymbol name="photo.on.rectangle" size={16} color="#9CE41C" />
+                <Text style={styles.previewBtnText}>從相簿選擇</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        ) : (
+          <View style={styles.photoActions}>
+            <TouchableOpacity style={styles.photoBtn} onPress={takePhoto}>
+              <IconSymbol name="camera.fill" size={28} color="#9CE41C" />
+              <Text style={styles.photoBtnText}>拍攝照片</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.photoBtn} onPress={pickPhoto}>
+              <IconSymbol name="photo.on.rectangle" size={28} color="#9CE41C" />
+              <Text style={styles.photoBtnText}>從相簿選擇</Text>
+            </TouchableOpacity>
+          </View>
+        )}
 
         {/* Name */}
         <Text style={styles.fieldLabel}>名稱</Text>
@@ -141,13 +213,34 @@ const styles = StyleSheet.create({
   back: { fontSize: 14, color: '#9CE41C', fontWeight: '700', letterSpacing: 1 },
   stepLabel: { fontSize: 14, color: '#666666', letterSpacing: 2, marginBottom: 8 },
   title: { fontSize: 28, fontWeight: '900', color: '#fff', letterSpacing: -0.5, marginBottom: 32 },
+  fieldLabel: { fontSize: 14, color: '#666666', letterSpacing: 2, marginBottom: 12 },
 
-  fieldLabel: { fontSize: 14, color: '#666666', letterSpacing: 2, marginBottom: 10 },
+  // Photo — no existing photo
+  photoActions: { flexDirection: 'row', gap: 12, marginBottom: 28 },
+  photoBtn: {
+    flex: 1, borderWidth: 1, borderColor: '#555555', borderStyle: 'dashed',
+    paddingVertical: 36, alignItems: 'center', gap: 10,
+  },
+  photoBtnText: { fontSize: 14, color: '#888888', letterSpacing: 1 },
+
+  // Photo — has photo
+  previewWrap: { marginBottom: 28 },
+  previewImg: { width: '100%', height: 260, resizeMode: 'cover', backgroundColor: '#111' },
+  previewActions: {
+    flexDirection: 'row', borderWidth: 1, borderColor: '#222',
+    borderTopWidth: 0,
+  },
+  previewBtn: {
+    flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
+    gap: 8, paddingVertical: 12,
+  },
+  previewBtnText: { fontSize: 14, color: '#888888', letterSpacing: 1 },
+  previewDivider: { width: 1, backgroundColor: '#222' },
+
   input: {
     borderWidth: 1, borderColor: '#333333',
     paddingHorizontal: 16, paddingVertical: 14,
-    fontSize: 14, color: '#fff', marginBottom: 24,
-    letterSpacing: 0.5,
+    fontSize: 14, color: '#fff', marginBottom: 24, letterSpacing: 0.5,
   },
 
   chips: { flexDirection: 'row', flexWrap: 'wrap', gap: 10, marginBottom: 40 },
