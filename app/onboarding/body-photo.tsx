@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, Image, Alert, ScrollView } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { router } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
 import * as ImagePicker from 'expo-image-picker';
 import { useAuth } from '@/context/AuthContext';
 import { supabase } from '@/lib/supabase';
@@ -9,6 +9,8 @@ import { IconSymbol } from '@/components/ui/icon-symbol';
 
 export default function BodyPhotoScreen() {
   const { user } = useAuth();
+  const { from } = useLocalSearchParams<{ from?: string }>();
+  const fromProfile = from === 'profile';
   const [photo, setPhoto] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
 
@@ -36,43 +38,43 @@ export default function BodyPhotoScreen() {
     setUploading(true);
     try {
       if (photo) {
-        const ext = photo.split('.').pop();
-        const path = `${user.id}/body-photo.${ext}`;
-        const response = await fetch(photo);
-        const blob = await response.blob();
-        await supabase.storage.from('wardrobe').upload(path, blob, { upsert: true });
+        const ext = photo.split('.').pop()?.split('?')[0] ?? 'jpg';
+        const fileName = `body-photo.${ext}`;
+        const path = `${user.id}/${fileName}`;
+        const formData = new FormData();
+        formData.append('file', { uri: photo, name: fileName, type: `image/${ext}` } as any);
+        await supabase.storage.from('wardrobe').upload(path, formData, { upsert: true });
         const { data } = supabase.storage.from('wardrobe').getPublicUrl(path);
         await supabase.from('users').update({
           body_photo_url: data.publicUrl,
-          onboarding_completed: true,
+          ...(fromProfile ? {} : { onboarding_completed: true }),
         }).eq('id', user.id);
-        await supabase.from('analytics_events').insert({
-          user_id: user.id,
-          event: 'body_photo_uploaded',
-        });
-      } else {
+        supabase.from('analytics_events').insert({ user_id: user.id, event: 'body_photo_uploaded' });
+      } else if (!fromProfile) {
         await supabase.from('users').update({ onboarding_completed: true }).eq('id', user.id);
-        await supabase.from('analytics_events').insert({
-          user_id: user.id,
-          event: 'body_photo_skipped',
-        });
+        supabase.from('analytics_events').insert({ user_id: user.id, event: 'body_photo_skipped' });
       }
-      await supabase.from('analytics_events').insert({
-        user_id: user.id,
-        event: 'onboarding_completed',
-      });
+      if (!fromProfile) {
+        supabase.from('analytics_events').insert({ user_id: user.id, event: 'onboarding_completed' });
+      }
     } catch (e) {
       console.error(e);
     }
     setUploading(false);
-    router.replace('/(tabs)');
+    if (fromProfile) router.back();
+    else router.replace('/(tabs)');
   }
 
   return (
     <SafeAreaView style={styles.container}>
       <ScrollView contentContainerStyle={styles.inner} showsVerticalScrollIndicator={false}>
+        {fromProfile && (
+          <TouchableOpacity style={styles.backBtn} onPress={() => router.back()}>
+            <Text style={styles.backText}>← 返回</Text>
+          </TouchableOpacity>
+        )}
         <View style={styles.top}>
-          <Text style={styles.label}>最後一步</Text>
+          <Text style={styles.label}>{fromProfile ? '更換全身照' : '最後一步'}</Text>
           <Text style={styles.title}>上傳你的{'\n'}全身照</Text>
           <Text style={styles.desc}>
             建議穿著貼身衣物拍攝（如運動背心＋短褲），穿搭合成效果更準確自然。
@@ -131,7 +133,9 @@ export default function BodyPhotoScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#0a0a0a' },
   inner: { flex: 1, paddingHorizontal: 24, justifyContent: 'space-between', paddingBottom: 40 },
-  top: { marginTop: 40 },
+  backBtn: { marginTop: 16, marginBottom: 8 },
+  backText: { fontSize: 14, color: '#9CE41C', fontWeight: '700', letterSpacing: 1 },
+  top: { marginTop: 24 },
   label: { fontSize: 14, color: '#9CE41C', letterSpacing: 2, marginBottom: 16 },
   title: {
     fontSize: 36, fontWeight: '900', color: '#fff',

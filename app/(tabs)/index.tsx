@@ -34,17 +34,26 @@ const LABEL_DEFS: { cat: string; side: 'left' | 'right'; topFrac: number }[] = [
   { cat: '鞋子', side: 'left',  topFrac: 0.80 },
 ];
 
-const OCCASIONS = ['日常', '上班', '約會', '運動', '聚會', '旅行'];
+const OCCASIONS: { label: string; en: string; icon: string }[] = [
+  { label: '上班', en: 'WORK',      icon: 'briefcase'    },
+  { label: '約會', en: 'DATE',      icon: 'heart'        },
+  { label: '露營', en: 'CAMPING',   icon: 'tent'         },
+  { label: '運動', en: 'SPORT',     icon: 'bolt'         },
+  { label: '派對', en: 'PARTY',     icon: 'star'         },
+  { label: '夜遊', en: 'NIGHT OUT', icon: 'moon'         },
+];
 const VIBES = ['輕鬆', '正式', '帥氣', '優雅', '休閒'];
 
 type Step = 'map' | 'occasion' | 'vibe' | 'generating' | 'result';
 type WardrobeItem = { name: string; brand: string | null; photo_url: string | null };
 type WardrobeMap = Record<string, WardrobeItem>;
+type GridItem = { id: string; name: string; brand: string | null; photo_url: string | null; category: string };
 
 type OutfitResult = {
   selected: { category: string; item: WardrobeItem }[];
   notes: string;
   title: string;
+  tryOnImageUrl?: string;
 };
 
 // ── Grid background ──────────────────────────────────────────────────────────
@@ -96,7 +105,7 @@ function LabelChip({
   if (side === 'left') {
     return (
       <View style={[styles.labelAbsolute, { top, left: H_PAD, flexDirection: 'row', alignItems: 'center' }]}>
-        <View style={{ width: LABEL_W }}>
+        <View style={[styles.labelBox, { width: LABEL_W }]}>
           <Text style={styles.labelCat}>{cat}</Text>
           <Text style={[styles.labelName, !filled && styles.labelNameEmpty]} numberOfLines={1}>
             {item?.name ?? '—'}
@@ -115,7 +124,7 @@ function LabelChip({
     <View style={[styles.labelAbsolute, { top, right: H_PAD, flexDirection: 'row', alignItems: 'center' }]}>
       <View style={[styles.lineDot, { backgroundColor: lineColor }]} />
       <View style={[styles.line, { width: RIGHT_LINE_W, backgroundColor: lineColor }]} />
-      <View style={{ width: LABEL_W }}>
+      <View style={[styles.labelBox, { width: LABEL_W }]}>
         <Text style={styles.labelCat}>{cat}</Text>
         <Text style={[styles.labelName, !filled && styles.labelNameEmpty]} numberOfLines={1}>
           {item?.name ?? '—'}
@@ -133,6 +142,7 @@ export default function HomeScreen() {
   const { user } = useAuth();
   const [bodyPhotoUrl, setBodyPhotoUrl] = useState<string | null>(null);
   const [wardrobeMap, setWardrobeMap] = useState<WardrobeMap>({});
+  const [allItems, setAllItems] = useState<GridItem[]>([]);
   const [totalItems, setTotalItems] = useState(0);
   const [loading, setLoading] = useState(true);
   const [step, setStep] = useState<Step>('map');
@@ -154,12 +164,19 @@ export default function HomeScreen() {
 
       const { data: items } = await supabase
         .from('wardrobe_items')
-        .select('category, name, brand, photo_url')
+        .select('id, category, name, brand, photo_url')
         .eq('user_id', user.id)
         .order('created_at', { ascending: false });
 
       if (items) {
         setTotalItems(items.length);
+        setAllItems(items.map(i => ({
+          id: i.id,
+          name: i.name,
+          brand: i.brand ?? null,
+          photo_url: i.photo_url ?? null,
+          category: i.category,
+        })));
         const map: WardrobeMap = {};
         items.forEach(item => {
           if (!map[item.category]) {
@@ -195,35 +212,36 @@ export default function HomeScreen() {
         })
         .join('\n');
 
-      const prompt = `你是一位時尚造型師。用戶的衣櫃有：\n${wardrobeLines}\n\n場合：${occasion}\n氣圍：${vibe}\n\n請從衣櫃中選出最適合的單品組合，並給出簡短的穿搭建議。\n\n請回傳 JSON 格式（不要有其他文字）：\n{\n  "title": "穿搭標題（10字內）",\n  "selected_categories": ["上衣", "下著"],\n  "notes": "穿搭建議（50字內）"\n}`;
+      const prompt = `你是一位時尚造型師。用戶的衣櫃有：\n${wardrobeLines}\n\n場合：${occasion}\n氣圍：${vibe}\n\n請從衣櫃中選出最適合的單品組合，並給出簡短的穿搭建議。\n\n只回傳 JSON，不要有其他文字或 markdown：\n{\n  "title": "穿搭標題（10字內）",\n  "selected_categories": ["上衣", "下著"],\n  "notes": "穿搭建議（50字內）"\n}`;
 
-      const apiKey = process.env.EXPO_PUBLIC_OPENAI_API_KEY;
-      if (!apiKey) throw new Error('API key not configured');
+      const apiKey = process.env.EXPO_PUBLIC_ANTHROPIC_API_KEY;
+      if (!apiKey) throw new Error('Anthropic API key not configured');
 
-      const res = await fetch('https://api.openai.com/v1/chat/completions', {
+      const res = await fetch('https://api.anthropic.com/v1/messages', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${apiKey}`,
+          'x-api-key': apiKey,
+          'anthropic-version': '2023-06-01',
         },
         body: JSON.stringify({
-          model: 'gpt-4o-mini',
-          messages: [{ role: 'user', content: prompt }],
-          response_format: { type: 'json_object' },
+          model: 'claude-haiku-4-5-20251001',
           max_tokens: 300,
+          messages: [{ role: 'user', content: prompt }],
         }),
       });
 
       if (!res.ok) {
         const errText = await res.text();
-        throw new Error(`OpenAI ${res.status}: ${errText}`);
+        throw new Error(`Claude ${res.status}: ${errText}`);
       }
 
       const json = await res.json();
-      const rawContent = json?.choices?.[0]?.message?.content;
-      if (!rawContent) throw new Error('Empty response from OpenAI');
+      const rawContent = json?.content?.[0]?.text;
+      if (!rawContent) throw new Error('Empty response from Claude');
 
-      const content = JSON.parse(rawContent);
+      const cleaned = rawContent.replace(/```json\n?|\n?```/g, '').trim();
+      const content = JSON.parse(cleaned);
       const selectedCats: string[] = content.selected_categories ?? [];
 
       const result: OutfitResult = {
@@ -233,6 +251,45 @@ export default function HomeScreen() {
           .filter(cat => wardrobeMap[cat])
           .map(cat => ({ category: cat, item: wardrobeMap[cat] })),
       };
+
+      // Generate try-on image with DALL-E 3
+      const openaiKey = process.env.EXPO_PUBLIC_OPENAI_API_KEY;
+      if (openaiKey && result.selected.length > 0) {
+        try {
+          const itemsDesc = result.selected
+            .map(({ category, item }) => `${item.name}（${category}${item.brand ? `，${item.brand}` : ''}）`)
+            .join('、');
+          const imagePrompt = `Full body fashion editorial photo of a young Asian person wearing: ${itemsDesc}. Clean minimal light background, natural standing pose, complete outfit visible head to toe, high quality fashion photography.`;
+
+          const imgRes = await fetch('https://api.openai.com/v1/images/generations', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${openaiKey}`,
+            },
+            body: JSON.stringify({
+              model: 'dall-e-3',
+              prompt: imagePrompt,
+              n: 1,
+              size: '1024x1792',
+              quality: 'standard',
+            }),
+          });
+          if (imgRes.ok) {
+            const imgJson = await imgRes.json();
+            result.tryOnImageUrl = imgJson?.data?.[0]?.url;
+            console.log('DALL-E url:', result.tryOnImageUrl);
+          } else {
+            const errText = await imgRes.text();
+            console.error('DALL-E error', imgRes.status, errText);
+          }
+        } catch (imgErr) {
+          console.error('try-on image generation failed:', imgErr);
+        }
+        if (!result.tryOnImageUrl) {
+          console.error('tryOnImageUrl not set — imgRes may have failed or returned unexpected shape');
+        }
+      }
 
       setOutfitResult(result);
     } catch (e) {
@@ -325,6 +382,32 @@ export default function HomeScreen() {
               <Text style={styles.nudgeArrow}>→</Text>
             </TouchableOpacity>
           )}
+
+          {/* ITEM grid */}
+          {allItems.length > 0 && (
+            <View style={styles.itemsSection}>
+              <Text style={styles.itemsSectionTitle}>ITEM</Text>
+              <View style={styles.itemsGrid}>
+                {allItems.map(item => (
+                  <View key={item.id} style={styles.itemCard}>
+                    <Text style={styles.itemCardName} numberOfLines={1}>{item.name}</Text>
+                    {item.brand
+                      ? <Text style={styles.itemCardBrand} numberOfLines={1}>{item.brand}</Text>
+                      : null}
+                    {item.photo_url ? (
+                      <Image
+                        source={{ uri: item.photo_url }}
+                        style={styles.itemCardPhoto}
+                        resizeMode="contain"
+                      />
+                    ) : (
+                      <View style={styles.itemCardPhotoEmpty} />
+                    )}
+                  </View>
+                ))}
+              </View>
+            </View>
+          )}
         </ScrollView>
       </SafeAreaView>
     );
@@ -334,25 +417,46 @@ export default function HomeScreen() {
   if (step === 'occasion') {
     return (
       <SafeAreaView style={styles.container}>
-        <ScrollView contentContainerStyle={styles.inner} showsVerticalScrollIndicator={false}>
-          <View style={styles.header}>
-            <TouchableOpacity onPress={() => setStep('map')}>
-              <Text style={styles.back}>← 返回</Text>
-            </TouchableOpacity>
-          </View>
-          <Text style={styles.stepLabel}>今天要去哪</Text>
-          <Text style={styles.stepTitle}>選個場合</Text>
-          <View style={styles.chips}>
-            {OCCASIONS.map(o => (
+        <View style={styles.genHeader}>
+          <TouchableOpacity onPress={() => setStep('map')}>
+            <Text style={styles.back}>← 返回</Text>
+          </TouchableOpacity>
+        </View>
+        <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.genInner}>
+          <Text style={styles.genTitle}>{'GENERATE\nYOUR LOOK'}</Text>
+          <Text style={styles.genSubtitle}>選擇今天的場合</Text>
+
+          {OCCASIONS.map((o, i) => {
+            const selected = occasion === o.label;
+            return (
               <TouchableOpacity
-                key={o}
-                style={[styles.chip, occasion === o && styles.chipActive]}
-                onPress={() => setOccasion(o)}
+                key={o.label}
+                style={[styles.occasionRow, i === OCCASIONS.length - 1 && { borderBottomWidth: 0 }]}
+                onPress={() => setOccasion(o.label)}
+                activeOpacity={0.6}
               >
-                <Text style={[styles.chipText, occasion === o && styles.chipTextActive]}>{o}</Text>
+                <IconSymbol
+                  name={o.icon as any}
+                  size={22}
+                  color={selected ? '#fff' : '#555'}
+                />
+                <View style={styles.occasionText}>
+                  <Text style={[styles.occasionLabel, selected && styles.occasionLabelSelected]}>
+                    {o.label}
+                  </Text>
+                  <Text style={[styles.occasionEn, selected && styles.occasionEnSelected]}>
+                    {o.en}
+                  </Text>
+                </View>
+                <View style={[styles.radio, selected && styles.radioSelected]}>
+                  {selected && <IconSymbol name="checkmark" size={11} color="#0a0a0a" />}
+                </View>
               </TouchableOpacity>
-            ))}
-          </View>
+            );
+          })}
+        </ScrollView>
+
+        <View style={styles.genFooter}>
           <TouchableOpacity
             style={[styles.primaryBtn, !occasion && styles.btnDisabled]}
             onPress={() => occasion && setStep('vibe')}
@@ -360,7 +464,7 @@ export default function HomeScreen() {
           >
             <Text style={styles.primaryBtnText}>下一步 →</Text>
           </TouchableOpacity>
-        </ScrollView>
+        </View>
       </SafeAreaView>
     );
   }
@@ -426,8 +530,22 @@ export default function HomeScreen() {
 
         <Text style={styles.stepTitle}>{outfitResult?.title ?? '今日穿搭'}</Text>
 
-        {/* Selected item photos */}
-        {outfitResult && outfitResult.selected.length > 0 ? (
+        {/* Try-on image */}
+        {outfitResult?.tryOnImageUrl ? (
+          <Image
+            source={{ uri: outfitResult.tryOnImageUrl }}
+            style={styles.tryOnImage}
+            resizeMode="cover"
+          />
+        ) : (
+          <View style={styles.outfitPlaceholder}>
+            <View style={styles.outfitDot} />
+            <Text style={styles.outfitPlaceholderText}>穿搭圖</Text>
+          </View>
+        )}
+
+        {/* Selected items grid */}
+        {outfitResult && outfitResult.selected.length > 0 && (
           <View style={styles.outfitGrid}>
             {outfitResult.selected.map(({ category, item }) => (
               <View key={category} style={styles.outfitGridItem}>
@@ -442,11 +560,6 @@ export default function HomeScreen() {
                 </View>
               </View>
             ))}
-          </View>
-        ) : (
-          <View style={styles.outfitPlaceholder}>
-            <View style={styles.outfitDot} />
-            <Text style={styles.outfitPlaceholderText}>穿搭圖</Text>
           </View>
         )}
 
@@ -495,12 +608,37 @@ const styles = StyleSheet.create({
 
   // Labels
   labelAbsolute: { position: 'absolute' },
-  labelCat: { fontSize: 11, color: '#666666', letterSpacing: 1.5, marginBottom: 2 },
-  labelName: { fontSize: 15, fontWeight: '900', color: '#ffffff', letterSpacing: 0.2, marginBottom: 2 },
+  labelBox: {
+    borderWidth: 1, borderColor: '#2a2a2a',
+    backgroundColor: 'rgba(10,10,10,0.85)',
+    padding: 8,
+  },
+  labelCat: { fontSize: 10, color: '#9CE41C', letterSpacing: 1.5, marginBottom: 3 },
+  labelName: { fontSize: 14, fontWeight: '900', color: '#ffffff', letterSpacing: 0.2, marginBottom: 2 },
   labelNameEmpty: { color: '#333333' },
-  labelBrand: { fontSize: 12, color: '#9CE41C', letterSpacing: 0.5 },
+  labelBrand: { fontSize: 11, color: '#888888', letterSpacing: 0.3 },
   line: { height: 1 },
   lineDot: { width: 4, height: 4, borderRadius: 2 },
+
+  // ITEM grid
+  itemsSection: { marginTop: 32 },
+  itemsSectionTitle: {
+    fontSize: 13, fontWeight: '900', color: '#9CE41C',
+    letterSpacing: 3, marginBottom: 14,
+  },
+  itemsGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
+  itemCard: {
+    width: (CONTENT_W - 10) / 2,
+    backgroundColor: '#131313',
+    borderRadius: 12,
+    padding: 12,
+    overflow: 'hidden',
+    minHeight: 200,
+  },
+  itemCardName: { fontSize: 14, fontWeight: '700', color: '#fff', marginBottom: 2 },
+  itemCardBrand: { fontSize: 12, color: '#666', marginBottom: 8 },
+  itemCardPhoto: { width: '100%', height: 140, borderRadius: 6 },
+  itemCardPhotoEmpty: { width: '100%', height: 140, backgroundColor: '#1e1e1e', borderRadius: 6 },
 
   itemCount: {
     fontSize: 14, color: '#444444', letterSpacing: 2,
@@ -530,6 +668,31 @@ const styles = StyleSheet.create({
   chipText: { fontSize: 14, color: '#888888', letterSpacing: 1 },
   chipTextActive: { color: '#0a0a0a', fontWeight: '800' },
 
+  // Generate Your Look
+  genHeader: { paddingHorizontal: 24, paddingTop: 16, paddingBottom: 8 },
+  genInner: { paddingHorizontal: 24, paddingBottom: 24 },
+  genFooter: { paddingHorizontal: 24, paddingBottom: 32, paddingTop: 12 },
+  genTitle: {
+    fontSize: 36, fontWeight: '900', color: '#fff',
+    letterSpacing: -0.5, lineHeight: 40, marginBottom: 8, marginTop: 8,
+  },
+  genSubtitle: { fontSize: 14, color: '#666', letterSpacing: 1, marginBottom: 24 },
+  occasionRow: {
+    flexDirection: 'row', alignItems: 'center', gap: 16,
+    paddingVertical: 18, borderBottomWidth: 1, borderBottomColor: '#1a1a1a',
+  },
+  occasionText: { flex: 1 },
+  occasionLabel: { fontSize: 20, fontWeight: '700', color: '#888', marginBottom: 2 },
+  occasionLabelSelected: { color: '#fff' },
+  occasionEn: { fontSize: 11, color: '#444', letterSpacing: 2 },
+  occasionEnSelected: { color: '#9CE41C' },
+  radio: {
+    width: 22, height: 22, borderRadius: 11,
+    borderWidth: 1.5, borderColor: '#444',
+    alignItems: 'center', justifyContent: 'center',
+  },
+  radioSelected: { backgroundColor: '#9CE41C', borderColor: '#9CE41C' },
+
   // Generating
   generatingState: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 20 },
   generatingText: { fontSize: 16, color: '#fff', fontWeight: '700', letterSpacing: 1 },
@@ -544,6 +707,10 @@ const styles = StyleSheet.create({
   outfitItemCat: { fontSize: 11, color: '#666666', letterSpacing: 1.5 },
   outfitItemName: { fontSize: 14, fontWeight: '700', color: '#fff' },
 
+  tryOnImage: {
+    width: '100%', height: 420, backgroundColor: '#111',
+    marginBottom: 20,
+  },
   outfitPlaceholder: {
     width: '100%', height: 260, backgroundColor: '#111111',
     alignItems: 'center', justifyContent: 'center', gap: 12, marginBottom: 16,

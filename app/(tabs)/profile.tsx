@@ -86,13 +86,20 @@ export default function ProfileScreen() {
         {profile?.style_tags && profile.style_tags.length > 0 && (
           <View style={styles.section}>
             <Text style={styles.sectionLabel}>你的風格</Text>
-            <View style={styles.tags}>
+            <TouchableOpacity
+              style={styles.tags}
+              onPress={() => router.push('/onboarding/style-quiz')}
+              activeOpacity={0.7}
+            >
               {profile.style_tags.map(tag => (
                 <View key={tag} style={styles.tag}>
                   <Text style={styles.tagText}>{tag}</Text>
                 </View>
               ))}
-            </View>
+              <View style={styles.tagEdit}>
+                <Text style={styles.tagEditText}>編輯 →</Text>
+              </View>
+            </TouchableOpacity>
           </View>
         )}
 
@@ -102,7 +109,7 @@ export default function ProfileScreen() {
 
           <TouchableOpacity
             style={styles.row}
-            onPress={() => router.push('/onboarding/body-photo')}
+            onPress={() => router.push('/onboarding/body-photo?from=profile')}
           >
             <Text style={styles.rowText}>
               {profile?.body_photo_url ? '更換全身照' : '上傳全身照'}
@@ -110,13 +117,6 @@ export default function ProfileScreen() {
             <Text style={styles.rowArrow}>→</Text>
           </TouchableOpacity>
 
-          <TouchableOpacity
-            style={styles.row}
-            onPress={() => router.push('/onboarding/style-quiz')}
-          >
-            <Text style={styles.rowText}>重新測驗風格</Text>
-            <Text style={styles.rowArrow}>→</Text>
-          </TouchableOpacity>
         </View>
 
         <TouchableOpacity style={styles.signOutBtn} onPress={handleSignOut}>
@@ -150,9 +150,11 @@ const styles = StyleSheet.create({
 
   section: { marginBottom: 32 },
   sectionLabel: { fontSize: 14, color: '#666666', letterSpacing: 2, marginBottom: 16 },
-  tags: { flexDirection: 'row', gap: 8, flexWrap: 'wrap' },
+  tags: { flexDirection: 'row', gap: 8, flexWrap: 'wrap', alignItems: 'center' },
   tag: { backgroundColor: '#9CE41C', paddingHorizontal: 14, paddingVertical: 8 },
   tagText: { color: '#0a0a0a', fontWeight: '800', fontSize: 14, letterSpacing: 1 },
+  tagEdit: { paddingHorizontal: 4, paddingVertical: 8 },
+  tagEditText: { fontSize: 13, color: '#555', letterSpacing: 1 },
 
   row: {
     flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
