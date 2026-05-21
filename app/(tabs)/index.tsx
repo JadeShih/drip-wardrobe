@@ -256,10 +256,17 @@ export default function HomeScreen() {
       const openaiKey = process.env.EXPO_PUBLIC_OPENAI_API_KEY;
       if (openaiKey && result.selected.length > 0) {
         try {
+          const categoryMap: Record<string, string> = {
+            '上衣': 'top', '下著': 'bottoms', '外套': 'outerwear', '鞋子': 'shoes', '配件': 'accessory',
+          };
           const itemsDesc = result.selected
-            .map(({ category, item }) => `${item.name}（${category}${item.brand ? `，${item.brand}` : ''}）`)
-            .join('、');
-          const imagePrompt = `Full body fashion editorial photo of a young Asian person wearing: ${itemsDesc}. Clean minimal light background, natural standing pose, complete outfit visible head to toe, high quality fashion photography.`;
+            .map(({ category, item }) => {
+              const catEn = categoryMap[category] ?? category;
+              const brand = item.brand ? ` by ${item.brand}` : '';
+              return `${catEn}${brand}`;
+            })
+            .join(', ');
+          const imagePrompt = `Fashion editorial photo: full body shot of a person wearing ${itemsDesc}. Minimal white studio background, natural standing pose, complete outfit visible from head to toe, clean high-quality fashion photography.`;
 
           const imgRes = await fetch('https://api.openai.com/v1/images/generations', {
             method: 'POST',
@@ -268,35 +275,32 @@ export default function HomeScreen() {
               'Authorization': `Bearer ${openaiKey}`,
             },
             body: JSON.stringify({
-              model: 'dall-e-3',
+              model: 'dall-e-2',
               prompt: imagePrompt,
               n: 1,
-              size: '1024x1792',
-              quality: 'standard',
+              size: '512x512',
             }),
           });
           if (imgRes.ok) {
             const imgJson = await imgRes.json();
             result.tryOnImageUrl = imgJson?.data?.[0]?.url;
-            console.log('DALL-E url:', result.tryOnImageUrl);
           } else {
-            const errText = await imgRes.text();
-            console.error('DALL-E error', imgRes.status, errText);
+            const errJson = await imgRes.json().catch(() => null);
+            const errMsg = errJson?.error?.message ?? errJson?.error?.code ?? `status ${imgRes.status}`;
+            console.error('DALL-E error', imgRes.status, JSON.stringify(errJson));
+            throw new Error(`DALL-E: ${errMsg}`);
           }
         } catch (imgErr) {
           console.error('try-on image generation failed:', imgErr);
         }
-        if (!result.tryOnImageUrl) {
-          console.error('tryOnImageUrl not set — imgRes may have failed or returned unexpected shape');
-        }
       }
 
       setOutfitResult(result);
-    } catch (e) {
+    } catch (e: any) {
       console.error('generate error', e);
       setOutfitResult({
         title: `${occasion} 穿搭`,
-        notes: '穿搭建議生成失敗，請稍後再試。',
+        notes: e?.message ?? '穿搭建議生成失敗，請稍後再試。',
         selected: [],
       });
     }
@@ -343,7 +347,7 @@ export default function HomeScreen() {
                 <Image source={{ uri: bodyPhotoUrl }} style={styles.bodyPhoto} />
               ) : (
                 <View style={styles.silhouette}>
-                  <IconSymbol name="person.fill" size={FIG_W - 10} color="#2a2a2a" />
+                  <IconSymbol name="person.fill" size={FIG_W - 10} color="#3d3d3d" />
                 </View>
               )}
             </View>
