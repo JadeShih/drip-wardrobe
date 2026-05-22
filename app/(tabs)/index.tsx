@@ -1,7 +1,7 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useRef, useEffect } from 'react';
 import {
   View, Text, TouchableOpacity, StyleSheet,
-  Image, Dimensions, ActivityIndicator, ScrollView,
+  Image, Dimensions, ActivityIndicator, ScrollView, Animated, Easing,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
@@ -92,20 +92,21 @@ function GridBg({ height }: { height: number }) {
 
 // ── Label chip ───────────────────────────────────────────────────────────────
 function LabelChip({
-  cat, item, side, top,
+  cat, item, side, top, highlighted,
 }: {
   cat: string;
   item?: { name: string; brand: string | null };
   side: 'left' | 'right';
   top: number;
+  highlighted?: boolean;
 }) {
   const filled = !!item;
-  const lineColor = filled ? 'rgba(156,228,28,0.4)' : 'rgba(255,255,255,0.12)';
+  const lineColor = highlighted ? 'rgba(156,228,28,0.8)' : filled ? 'rgba(156,228,28,0.4)' : 'rgba(255,255,255,0.12)';
 
   if (side === 'left') {
     return (
       <View style={[styles.labelAbsolute, { top, left: H_PAD, flexDirection: 'row', alignItems: 'center' }]}>
-        <View style={[styles.labelBox, { width: LABEL_W }]}>
+        <View style={[styles.labelBox, { width: LABEL_W }, highlighted && styles.labelBoxHighlighted]}>
           <Text style={styles.labelCat}>{cat}</Text>
           <Text style={[styles.labelName, !filled && styles.labelNameEmpty]} numberOfLines={1}>
             {item?.name ?? '—'}
@@ -124,7 +125,7 @@ function LabelChip({
     <View style={[styles.labelAbsolute, { top, right: H_PAD, flexDirection: 'row', alignItems: 'center' }]}>
       <View style={[styles.lineDot, { backgroundColor: lineColor }]} />
       <View style={[styles.line, { width: RIGHT_LINE_W, backgroundColor: lineColor }]} />
-      <View style={[styles.labelBox, { width: LABEL_W }]}>
+      <View style={[styles.labelBox, { width: LABEL_W }, highlighted && styles.labelBoxHighlighted]}>
         <Text style={styles.labelCat}>{cat}</Text>
         <Text style={[styles.labelName, !filled && styles.labelNameEmpty]} numberOfLines={1}>
           {item?.name ?? '—'}
@@ -149,6 +150,19 @@ export default function HomeScreen() {
   const [occasion, setOccasion] = useState('');
   const [vibe, setVibe] = useState('');
   const [outfitResult, setOutfitResult] = useState<OutfitResult | null>(null);
+  const [imageGenerating, setImageGenerating] = useState(false);
+  const [appliedOutfit, setAppliedOutfit] = useState<OutfitResult | null>(null);
+  const dotAnim = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    if (!imageGenerating) { dotAnim.setValue(0); return; }
+    Animated.loop(
+      Animated.sequence([
+        Animated.timing(dotAnim, { toValue: 1, duration: 800, easing: Easing.inOut(Easing.ease), useNativeDriver: true }),
+        Animated.timing(dotAnim, { toValue: 0, duration: 800, easing: Easing.inOut(Easing.ease), useNativeDriver: true }),
+      ])
+    ).start();
+  }, [imageGenerating]);
 
   const firstName = user?.user_metadata?.full_name?.split(' ')[0] ?? '';
 
@@ -160,7 +174,9 @@ export default function HomeScreen() {
         .select('body_photo_url')
         .eq('id', user.id)
         .single();
-      setBodyPhotoUrl(userData?.body_photo_url ?? null);
+      const url = userData?.body_photo_url ?? null;
+      console.log('body photo url:', url);
+      setBodyPhotoUrl(url);
 
       const { data: items } = await supabase
         .from('wardrobe_items')
@@ -252,50 +268,64 @@ export default function HomeScreen() {
           .map(cat => ({ category: cat, item: wardrobeMap[cat] })),
       };
 
-      // Generate try-on image with DALL-E 3
+      // ── 立刻顯示結果頁，圖片在背景生成 ──
+      setOutfitResult(result);
+      setStep('result');
+
+      // 背景生成穿搭圖
       const openaiKey = process.env.EXPO_PUBLIC_OPENAI_API_KEY;
       if (openaiKey && result.selected.length > 0) {
-        try {
-          const categoryMap: Record<string, string> = {
-            '上衣': 'top', '下著': 'bottoms', '外套': 'outerwear', '鞋子': 'shoes', '配件': 'accessory',
-          };
-          const itemsDesc = result.selected
-            .map(({ category, item }) => {
-              const catEn = categoryMap[category] ?? category;
-              const brand = item.brand ? ` by ${item.brand}` : '';
-              return `${catEn}${brand}`;
-            })
-            .join(', ');
-          const imagePrompt = `Fashion editorial photo: full body shot of a person wearing ${itemsDesc}. Minimal white studio background, natural standing pose, complete outfit visible from head to toe, clean high-quality fashion photography.`;
+        setImageGenerating(true);
+        (async () => {
+          try {
+            const categoryMap: Record<string, string> = {
+              '上衣': 'top', '下著': 'bottoms', '外套': 'outerwear', '鞋子': 'shoes', '配件': 'accessory',
+            };
+            const itemsDesc = result.selected
+              .map(({ category, item }) => {
+                const catEn = categoryMap[category] ?? category;
+                const brand = item.brand ? ` by ${item.brand}` : '';
+                return `${catEn}${brand}`;
+              })
+              .join(', ');
+            const imagePrompt = `Fashion editorial photo: full body shot of a person wearing ${itemsDesc}. Minimal white studio background, natural standing pose, complete outfit visible from head to toe, clean high-quality fashion photography.`;
 
-          const imgRes = await fetch('https://api.openai.com/v1/images/generations', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              'Authorization': `Bearer ${openaiKey}`,
-            },
-            body: JSON.stringify({
-              model: 'dall-e-2',
-              prompt: imagePrompt,
-              n: 1,
-              size: '512x512',
-            }),
-          });
-          if (imgRes.ok) {
-            const imgJson = await imgRes.json();
-            result.tryOnImageUrl = imgJson?.data?.[0]?.url;
-          } else {
-            const errJson = await imgRes.json().catch(() => null);
-            const errMsg = errJson?.error?.message ?? errJson?.error?.code ?? `status ${imgRes.status}`;
-            console.error('DALL-E error', imgRes.status, JSON.stringify(errJson));
-            throw new Error(`DALL-E: ${errMsg}`);
+            const imgRes = await fetch('https://api.openai.com/v1/images/generations', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${openaiKey}`,
+              },
+              body: JSON.stringify({
+                model: 'gpt-image-2',
+                prompt: imagePrompt,
+                n: 1,
+                size: '1024x1024',
+                quality: 'medium',
+              }),
+            });
+            if (imgRes.ok) {
+              const imgJson = await imgRes.json();
+              const url = imgJson?.data?.[0]?.url;
+              const b64 = imgJson?.data?.[0]?.b64_json;
+              const imageUrl = url ?? (b64 ? `data:image/png;base64,${b64}` : null);
+              if (imageUrl) {
+                setOutfitResult(prev => prev ? { ...prev, tryOnImageUrl: imageUrl } : prev);
+              } else {
+                console.error('image gen: no url or b64 in response', JSON.stringify(imgJson).slice(0, 200));
+              }
+            } else {
+              const errJson = await imgRes.json().catch(() => null);
+              console.error('image gen error', imgRes.status, JSON.stringify(errJson));
+            }
+          } catch (imgErr) {
+            console.error('try-on image generation failed:', imgErr);
+          } finally {
+            setImageGenerating(false);
           }
-        } catch (imgErr) {
-          console.error('try-on image generation failed:', imgErr);
-        }
+        })();
       }
 
-      setOutfitResult(result);
     } catch (e: any) {
       console.error('generate error', e);
       setOutfitResult({
@@ -303,14 +333,25 @@ export default function HomeScreen() {
         notes: e?.message ?? '穿搭建議生成失敗，請稍後再試。',
         selected: [],
       });
+      setStep('result');
     }
-
-    setStep('result');
   }
 
   function reset() {
     setOccasion(''); setVibe(''); setOutfitResult(null);
+    setImageGenerating(false);
     setStep('map');
+  }
+
+  function saveOutfit() {
+    if (!outfitResult || !user) return;
+    supabase.from('analytics_events').insert({
+      user_id: user.id,
+      event: 'outfit_saved',
+      properties: { title: outfitResult.title },
+    });
+    setAppliedOutfit(outfitResult);
+    reset();
   }
 
   if (loading) {
@@ -335,7 +376,7 @@ export default function HomeScreen() {
             {firstName ? <Text style={styles.greeting}>嗨，{firstName}</Text> : null}
           </View>
 
-          {/* Figure container — stays within content padding, no negative margin */}
+          {/* Figure container */}
           <View style={{ height: FIG_CONTAINER_H, position: 'relative' }}>
             <GridBg height={FIG_CONTAINER_H} />
 
@@ -343,8 +384,14 @@ export default function HomeScreen() {
             <View style={[styles.figureWrap, {
               left: FIG_LEFT, width: FIG_W, height: FIG_H, top: FIG_TOP,
             }]}>
-              {bodyPhotoUrl ? (
-                <Image source={{ uri: bodyPhotoUrl }} style={styles.bodyPhoto} />
+              {appliedOutfit?.tryOnImageUrl ? (
+                <Image source={{ uri: appliedOutfit.tryOnImageUrl }} style={styles.bodyPhoto} />
+              ) : bodyPhotoUrl ? (
+                <Image
+                  source={{ uri: bodyPhotoUrl }}
+                  style={styles.bodyPhoto}
+                  onError={(e) => console.error('body photo load error', e.nativeEvent.error)}
+                />
               ) : (
                 <View style={styles.silhouette}>
                   <IconSymbol name="person.fill" size={FIG_W - 10} color="#3d3d3d" />
@@ -352,17 +399,32 @@ export default function HomeScreen() {
               )}
             </View>
 
-            {/* Labels */}
-            {LABEL_DEFS.map(({ cat, side, topFrac }) => (
-              <LabelChip
-                key={cat}
-                cat={cat}
-                item={wardrobeMap[cat]}
-                side={side}
-                top={FIG_TOP + topFrac * FIG_H}
-              />
-            ))}
+            {/* Labels — show applied outfit items if available, else wardrobe defaults */}
+            {LABEL_DEFS.map(({ cat, side, topFrac }) => {
+              const appliedItem = appliedOutfit?.selected.find(s => s.category === cat)?.item;
+              return (
+                <LabelChip
+                  key={cat}
+                  cat={cat}
+                  item={appliedItem ?? wardrobeMap[cat]}
+                  side={side}
+                  top={FIG_TOP + topFrac * FIG_H}
+                  highlighted={!!appliedItem}
+                />
+              );
+            })}
           </View>
+
+          {/* Applied outfit bar */}
+          {appliedOutfit && (
+            <View style={styles.appliedBar}>
+              <View style={styles.appliedDot} />
+              <Text style={styles.appliedTitle} numberOfLines={1}>{appliedOutfit.title}</Text>
+              <TouchableOpacity onPress={() => setAppliedOutfit(null)}>
+                <Text style={styles.appliedClear}>清除</Text>
+              </TouchableOpacity>
+            </View>
+          )}
 
           {/* Item count */}
           <Text style={styles.itemCount}>{`${totalItems} ITEMS IN YOUR CLOSET`}</Text>
@@ -374,7 +436,7 @@ export default function HomeScreen() {
             </TouchableOpacity>
           ) : (
             <TouchableOpacity style={styles.primaryBtn} onPress={() => setStep('occasion')}>
-              <Text style={styles.primaryBtnText}>生成今日穿搭 →</Text>
+              <Text style={styles.primaryBtnText}>{appliedOutfit ? '重新生成穿搭 →' : '生成今日穿搭 →'}</Text>
             </TouchableOpacity>
           )}
 
@@ -543,8 +605,21 @@ export default function HomeScreen() {
           />
         ) : (
           <View style={styles.outfitPlaceholder}>
-            <View style={styles.outfitDot} />
-            <Text style={styles.outfitPlaceholderText}>穿搭圖</Text>
+            {imageGenerating ? (
+              <>
+                <ActivityIndicator color="#9CE41C" size="small" />
+                <Text style={styles.outfitGeneratingText}>穿搭圖生成中</Text>
+                <Animated.View style={[styles.outfitGeneratingBar, {
+                  opacity: dotAnim.interpolate({ inputRange: [0, 1], outputRange: [0.3, 1] }),
+                  transform: [{ scaleX: dotAnim.interpolate({ inputRange: [0, 1], outputRange: [0.4, 1] }) }],
+                }]} />
+              </>
+            ) : (
+              <>
+                <View style={styles.outfitDot} />
+                <Text style={styles.outfitPlaceholderText}>穿搭圖</Text>
+              </>
+            )}
           </View>
         )}
 
@@ -576,7 +651,7 @@ export default function HomeScreen() {
         ) : null}
 
         <View style={styles.resultActions}>
-          <TouchableOpacity style={styles.saveBtn}>
+          <TouchableOpacity style={styles.saveBtn} onPress={saveOutfit}>
             <Text style={styles.saveBtnText}>收藏這套</Text>
           </TouchableOpacity>
           <TouchableOpacity style={styles.retryBtn} onPress={generate}>
@@ -604,7 +679,7 @@ const styles = StyleSheet.create({
   // Figure map
   figureContainer: { position: 'relative', marginHorizontal: -24, overflow: 'hidden' },
   figureWrap: { position: 'absolute', overflow: 'hidden', backgroundColor: '#111111' },
-  bodyPhoto: { width: '100%', height: '100%', resizeMode: 'cover' },
+  bodyPhoto: { width: '100%', height: '100%', resizeMode: 'contain' },
   silhouette: {
     flex: 1, alignItems: 'center', justifyContent: 'center',
     backgroundColor: '#141414',
@@ -616,6 +691,9 @@ const styles = StyleSheet.create({
     borderWidth: 1, borderColor: '#2a2a2a',
     backgroundColor: 'rgba(10,10,10,0.85)',
     padding: 8,
+  },
+  labelBoxHighlighted: {
+    borderColor: '#9CE41C',
   },
   labelCat: { fontSize: 10, color: '#9CE41C', letterSpacing: 1.5, marginBottom: 3 },
   labelName: { fontSize: 14, fontWeight: '900', color: '#ffffff', letterSpacing: 0.2, marginBottom: 2 },
@@ -655,6 +733,15 @@ const styles = StyleSheet.create({
   primaryBtnText: { color: '#0a0a0a', fontWeight: '800', fontSize: 14, letterSpacing: 2 },
 
   // Nudge
+  appliedBar: {
+    flexDirection: 'row', alignItems: 'center', gap: 10,
+    backgroundColor: '#111111', paddingHorizontal: 14, paddingVertical: 10,
+    marginBottom: 16,
+  },
+  appliedDot: { width: 6, height: 6, backgroundColor: '#9CE41C' },
+  appliedTitle: { flex: 1, fontSize: 13, color: '#9CE41C', fontWeight: '700', letterSpacing: 0.5 },
+  appliedClear: { fontSize: 13, color: '#555555', letterSpacing: 1 },
+
   nudge: {
     flexDirection: 'row', alignItems: 'center', gap: 10,
     borderWidth: 1, borderColor: '#1e1e1e', padding: 14, marginTop: 16,
@@ -721,6 +808,8 @@ const styles = StyleSheet.create({
   },
   outfitDot: { width: 20, height: 20, backgroundColor: '#1e1e1e' },
   outfitPlaceholderText: { fontSize: 14, color: '#333333', letterSpacing: 2 },
+  outfitGeneratingText: { fontSize: 13, color: '#666666', letterSpacing: 2, marginTop: 4 },
+  outfitGeneratingBar: { width: 60, height: 2, backgroundColor: '#9CE41C', marginTop: 8 },
 
   notesBox: {
     flexDirection: 'row', gap: 12, borderWidth: 1, borderColor: '#1e1e1e',

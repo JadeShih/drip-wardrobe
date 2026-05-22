@@ -41,9 +41,10 @@ export default function BodyPhotoScreen() {
         const ext = photo.split('.').pop()?.split('?')[0] ?? 'jpg';
         const fileName = `body-photo.${ext}`;
         const path = `${user.id}/${fileName}`;
-        const formData = new FormData();
-        formData.append('file', { uri: photo, name: fileName, type: `image/${ext}` } as any);
-        await supabase.storage.from('wardrobe').upload(path, formData, { upsert: true });
+
+        const imgResponse = await fetch(photo);
+        const blob = await imgResponse.blob();
+        await supabase.storage.from('wardrobe').upload(path, blob, { contentType: `image/${ext}`, upsert: true });
         const { data } = supabase.storage.from('wardrobe').getPublicUrl(path);
         await supabase.from('users').update({
           body_photo_url: data.publicUrl,

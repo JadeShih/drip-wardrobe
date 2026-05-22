@@ -43,12 +43,12 @@ export default function AddScreen() {
       const fileName = `${Date.now()}.${ext}`;
       const path = `${user.id}/wardrobe/${fileName}`;
 
-      const formData = new FormData();
-      formData.append('file', { uri: photo, name: fileName, type: `image/${ext}` } as any);
+      const imgResponse = await fetch(photo);
+      const blob = await imgResponse.blob();
 
       const { error: uploadError } = await supabase.storage
         .from('wardrobe')
-        .upload(path, formData);
+        .upload(path, blob, { contentType: `image/${ext}`, upsert: true });
       if (uploadError) throw uploadError;
 
       const { data } = supabase.storage.from('wardrobe').getPublicUrl(path);

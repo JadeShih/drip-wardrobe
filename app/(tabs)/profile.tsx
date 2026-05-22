@@ -103,20 +103,37 @@ export default function ProfileScreen() {
           </View>
         )}
 
+        {/* Body photo preview */}
+        <View style={styles.section}>
+          <Text style={styles.sectionLabel}>全身照</Text>
+          <TouchableOpacity
+            style={styles.bodyPhotoWrap}
+            onPress={() => router.push('/onboarding/body-photo?from=profile')}
+            activeOpacity={0.8}
+          >
+            {profile?.body_photo_url ? (
+              <>
+                <Image
+                  source={{ uri: profile.body_photo_url }}
+                  style={styles.bodyPhotoImg}
+                  resizeMode="contain"
+                />
+                <View style={styles.bodyPhotoOverlay}>
+                  <Text style={styles.bodyPhotoOverlayText}>點擊更換</Text>
+                </View>
+              </>
+            ) : (
+              <View style={styles.bodyPhotoEmpty}>
+                <Text style={styles.bodyPhotoEmptyText}>尚未上傳</Text>
+                <Text style={styles.bodyPhotoEmptyAction}>點擊上傳全身照 →</Text>
+              </View>
+            )}
+          </TouchableOpacity>
+        </View>
+
         {/* Actions */}
         <View style={styles.section}>
           <Text style={styles.sectionLabel}>設定</Text>
-
-          <TouchableOpacity
-            style={styles.row}
-            onPress={() => router.push('/onboarding/body-photo?from=profile')}
-          >
-            <Text style={styles.rowText}>
-              {profile?.body_photo_url ? '更換全身照' : '上傳全身照'}
-            </Text>
-            <Text style={styles.rowArrow}>→</Text>
-          </TouchableOpacity>
-
         </View>
 
         <TouchableOpacity style={styles.signOutBtn} onPress={handleSignOut}>
@@ -150,6 +167,20 @@ const styles = StyleSheet.create({
 
   section: { marginBottom: 32 },
   sectionLabel: { fontSize: 14, color: '#666666', letterSpacing: 2, marginBottom: 16 },
+
+  bodyPhotoWrap: { position: 'relative', width: '100%', height: 280, backgroundColor: '#111111' },
+  bodyPhotoImg: { width: '100%', height: '100%' },
+  bodyPhotoOverlay: {
+    position: 'absolute', bottom: 0, left: 0, right: 0,
+    backgroundColor: 'rgba(0,0,0,0.55)', paddingVertical: 12, alignItems: 'center',
+  },
+  bodyPhotoOverlayText: { fontSize: 13, color: '#aaaaaa', letterSpacing: 1 },
+  bodyPhotoEmpty: {
+    flex: 1, alignItems: 'center', justifyContent: 'center', gap: 10,
+    borderWidth: 1, borderColor: '#1e1e1e', borderStyle: 'dashed',
+  },
+  bodyPhotoEmptyText: { fontSize: 14, color: '#444444', letterSpacing: 1 },
+  bodyPhotoEmptyAction: { fontSize: 14, color: '#9CE41C', letterSpacing: 1 },
   tags: { flexDirection: 'row', gap: 8, flexWrap: 'wrap', alignItems: 'center' },
   tag: { backgroundColor: '#9CE41C', paddingHorizontal: 14, paddingVertical: 8 },
   tagText: { color: '#0a0a0a', fontWeight: '800', fontSize: 14, letterSpacing: 1 },

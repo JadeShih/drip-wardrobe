@@ -71,11 +71,12 @@ export default function ItemEditScreen() {
         const ext = newPhotoUri.split('.').pop()?.split('?')[0] ?? 'jpg';
         const fileName = `${Date.now()}.${ext}`;
         const path = `${user.id}/wardrobe/${fileName}`;
-        const formData = new FormData();
-        formData.append('file', { uri: newPhotoUri, name: fileName, type: `image/${ext}` } as any);
+
+        const imgResponse = await fetch(newPhotoUri);
+        const blob = await imgResponse.blob();
         const { error: uploadError } = await supabase.storage
           .from('wardrobe')
-          .upload(path, formData);
+          .upload(path, blob, { contentType: `image/${ext}`, upsert: true });
         if (uploadError) throw uploadError;
         const { data } = supabase.storage.from('wardrobe').getPublicUrl(path);
         photoUrl = data.publicUrl;
