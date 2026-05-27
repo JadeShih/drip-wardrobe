@@ -7,6 +7,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect, router } from 'expo-router';
 import { useAuth } from '@/context/AuthContext';
 import { supabase } from '@/lib/supabase';
+import { getSignedUrl } from '@/lib/storage';
 import { IconSymbol } from '@/components/ui/icon-symbol';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
@@ -105,7 +106,14 @@ export default function WardrobeScreen() {
       .select('id, photo_url, category, main_color, name, brand')
       .eq('user_id', user.id)
       .order('created_at', { ascending: false });
-    setItems(data ?? []);
+    if (data) {
+      const signedPhotoUrls = await Promise.all(
+        data.map(i => getSignedUrl(i.photo_url ?? null)),
+      );
+      setItems(data.map((i, idx) => ({ ...i, photo_url: signedPhotoUrls[idx] })));
+    } else {
+      setItems([]);
+    }
     setLoading(false);
   }
 

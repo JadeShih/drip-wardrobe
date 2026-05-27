@@ -39,17 +39,26 @@ export default function BodyPhotoScreen() {
     try {
       if (photo) {
         const ext = photo.split('.').pop()?.split('?')[0] ?? 'jpg';
-        const fileName = `body-photo.${ext}`;
+        const fileName = `body-photo-${Date.now()}.${ext}`;
         const path = `${user.id}/${fileName}`;
 
         const imgResponse = await fetch(photo);
         const blob = await imgResponse.blob();
-        await supabase.storage.from('wardrobe').upload(path, blob, { contentType: `image/${ext}`, upsert: true });
+
+        const { error: uploadError } = await supabase.storage
+          .from('wardrobe')
+          .upload(path, blob, { contentType: `image/${ext}` });
+        if (uploadError) throw uploadError;
+
         const { data } = supabase.storage.from('wardrobe').getPublicUrl(path);
-        await supabase.from('users').update({
-          body_photo_url: data.publicUrl,
+        const publicUrl = data.publicUrl;
+
+        const { error: updateError } = await supabase.from('users').update({
+          body_photo_url: publicUrl,
           ...(fromProfile ? {} : { onboarding_completed: true }),
         }).eq('id', user.id);
+        if (updateError) throw updateError;
+
         supabase.from('analytics_events').insert({ user_id: user.id, event: 'body_photo_uploaded' });
       } else if (!fromProfile) {
         await supabase.from('users').update({ onboarding_completed: true }).eq('id', user.id);

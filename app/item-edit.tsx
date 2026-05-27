@@ -8,6 +8,7 @@ import { router, useLocalSearchParams } from 'expo-router';
 import * as ImagePicker from 'expo-image-picker';
 import { useAuth } from '@/context/AuthContext';
 import { supabase } from '@/lib/supabase';
+import { getSignedUrl } from '@/lib/storage';
 import { IconSymbol } from '@/components/ui/icon-symbol';
 
 const CATEGORIES = ['上衣', '下著', '外套', '鞋子', '配件'];
@@ -36,7 +37,8 @@ export default function ItemEditScreen() {
         setName(data.name ?? '');
         setCategory(data.category ?? '');
         setBrand(data.brand ?? '');
-        setExistingPhotoUrl(data.photo_url ?? null);
+        const signedUrl = await getSignedUrl(data.photo_url ?? null);
+        setExistingPhotoUrl(signedUrl);
       }
       setLoading(false);
     })();

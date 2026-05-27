@@ -8,6 +8,7 @@ import { router } from 'expo-router';
 import { useFocusEffect } from 'expo-router';
 import { useAuth } from '@/context/AuthContext';
 import { supabase } from '@/lib/supabase';
+import { getSignedUrl } from '@/lib/storage';
 import { IconSymbol } from '@/components/ui/icon-symbol';
 
 const { width: W } = Dimensions.get('window');
@@ -174,9 +175,10 @@ export default function HomeScreen() {
         .select('body_photo_url')
         .eq('id', user.id)
         .single();
-      const url = userData?.body_photo_url ?? null;
-      console.log('body photo url:', url);
-      setBodyPhotoUrl(url);
+      const rawBodyUrl = userData?.body_photo_url ?? null;
+      const signedBodyUrl = await getSignedUrl(rawBodyUrl);
+      console.log('body photo signed url:', signedBodyUrl);
+      setBodyPhotoUrl(signedBodyUrl);
 
       const { data: items } = await supabase
         .from('wardrobe_items')
@@ -186,15 +188,20 @@ export default function HomeScreen() {
 
       if (items) {
         setTotalItems(items.length);
-        setAllItems(items.map(i => ({
+        // Sign all item photo URLs in parallel
+        const signedPhotoUrls = await Promise.all(
+          items.map(i => getSignedUrl(i.photo_url ?? null)),
+        );
+        const signedItems = items.map((i, idx) => ({
           id: i.id,
           name: i.name,
           brand: i.brand ?? null,
-          photo_url: i.photo_url ?? null,
+          photo_url: signedPhotoUrls[idx],
           category: i.category,
-        })));
+        }));
+        setAllItems(signedItems);
         const map: WardrobeMap = {};
-        items.forEach(item => {
+        signedItems.forEach(item => {
           if (!map[item.category]) {
             map[item.category] = {
               name: item.name,
@@ -272,7 +279,7 @@ export default function HomeScreen() {
       setOutfitResult(result);
       setStep('result');
 
-      // 背景生成穿搭圖
+      // 背景生成穿搭圖（虛擬試衣）
       const openaiKey = process.env.EXPO_PUBLIC_OPENAI_API_KEY;
       if (openaiKey && result.selected.length > 0) {
         setImageGenerating(true);
@@ -288,35 +295,75 @@ export default function HomeScreen() {
                 return `${catEn}${brand}`;
               })
               .join(', ');
-            const imagePrompt = `Fashion editorial photo: full body shot of a person wearing ${itemsDesc}. Minimal white studio background, natural standing pose, complete outfit visible from head to toe, clean high-quality fashion photography.`;
 
-            const imgRes = await fetch('https://api.openai.com/v1/images/generations', {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${openaiKey}`,
-              },
-              body: JSON.stringify({
-                model: 'gpt-image-2',
-                prompt: imagePrompt,
-                n: 1,
-                size: '1024x1024',
-                quality: 'medium',
-              }),
-            });
-            if (imgRes.ok) {
-              const imgJson = await imgRes.json();
-              const url = imgJson?.data?.[0]?.url;
-              const b64 = imgJson?.data?.[0]?.b64_json;
-              const imageUrl = url ?? (b64 ? `data:image/png;base64,${b64}` : null);
-              if (imageUrl) {
-                setOutfitResult(prev => prev ? { ...prev, tryOnImageUrl: imageUrl } : prev);
+            // 有全身照 → 用 edits 端點做虛擬試衣
+            // 沒有 → fallback 到 generations
+            const hasBodyPhoto = !!bodyPhotoUrl;
+            const hasItemPhotos = result.selected.some(s => !!s.item.photo_url);
+
+            let imageUrl: string | null = null;
+
+            if (hasBodyPhoto || hasItemPhotos) {
+              // 虛擬試衣：把全身照 + 衣物照片傳給 gpt-image-1
+              const fd = new FormData();
+              fd.append('model', 'gpt-image-1');
+              fd.append('n', '1');
+              fd.append('size', '1024x1536');
+              fd.append('quality', 'medium');
+
+              const prompt = hasBodyPhoto
+                ? `Virtual try-on: dress the person in the first image with the clothing items shown in the reference images (${itemsDesc}). Keep the person's face, hair, body shape, and pose exactly the same. Only replace the clothing. Clean studio background, full body visible, fashion editorial quality.`
+                : `Fashion editorial try-on: show a person wearing these exact clothing items: ${itemsDesc}. Reference the clothing images provided. Full body shot, clean studio background, high quality fashion photography.`;
+              fd.append('prompt', prompt);
+
+              // 全身照
+              if (bodyPhotoUrl) {
+                fd.append('image[]', { uri: bodyPhotoUrl, type: 'image/jpeg', name: 'body.jpg' } as any);
+              }
+              // 衣物照片
+              for (const { item } of result.selected) {
+                if (item.photo_url) {
+                  fd.append('image[]', { uri: item.photo_url, type: 'image/jpeg', name: 'item.jpg' } as any);
+                }
+              }
+
+              const imgRes = await fetch('https://api.openai.com/v1/images/edits', {
+                method: 'POST',
+                headers: { 'Authorization': `Bearer ${openaiKey}` },
+                body: fd,
+              });
+
+              if (imgRes.ok) {
+                const imgJson = await imgRes.json();
+                const b64 = imgJson?.data?.[0]?.b64_json;
+                const rawUrl = imgJson?.data?.[0]?.url;
+                imageUrl = rawUrl ?? (b64 ? `data:image/png;base64,${b64}` : null);
               } else {
-                console.error('image gen: no url or b64 in response', JSON.stringify(imgJson).slice(0, 200));
+                const errJson = await imgRes.json().catch(() => null);
+                console.error('virtual try-on error', imgRes.status, JSON.stringify(errJson));
               }
             } else {
-              const errJson = await imgRes.json().catch(() => null);
-              console.error('image gen error', imgRes.status, JSON.stringify(errJson));
+              // Fallback：純文字生成
+              const imgRes = await fetch('https://api.openai.com/v1/images/generations', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${openaiKey}` },
+                body: JSON.stringify({
+                  model: 'gpt-image-1',
+                  prompt: `Fashion editorial photo: full body shot of a person wearing ${itemsDesc}. Minimal white studio background, natural standing pose, complete outfit visible from head to toe.`,
+                  n: 1,
+                  size: '1024x1536',
+                  quality: 'medium',
+                }),
+              });
+              if (imgRes.ok) {
+                const imgJson = await imgRes.json();
+                const b64 = imgJson?.data?.[0]?.b64_json;
+                imageUrl = imgJson?.data?.[0]?.url ?? (b64 ? `data:image/png;base64,${b64}` : null);
+              }
+            }
+
+            if (imageUrl) {
+              setOutfitResult(prev => prev ? { ...prev, tryOnImageUrl: imageUrl! } : prev);
             }
           } catch (imgErr) {
             console.error('try-on image generation failed:', imgErr);
@@ -799,7 +846,7 @@ const styles = StyleSheet.create({
   outfitItemName: { fontSize: 14, fontWeight: '700', color: '#fff' },
 
   tryOnImage: {
-    width: '100%', height: 420, backgroundColor: '#111',
+    width: '100%', aspectRatio: 2 / 3, backgroundColor: '#111',
     marginBottom: 20,
   },
   outfitPlaceholder: {

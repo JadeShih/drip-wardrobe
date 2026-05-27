@@ -1,12 +1,13 @@
-import { useState, useEffect } from 'react';
+import { useState, useCallback } from 'react';
 import {
   View, Text, TouchableOpacity, StyleSheet,
   ScrollView, Image, Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { router } from 'expo-router';
+import { router, useFocusEffect } from 'expo-router';
 import { useAuth } from '@/context/AuthContext';
 import { supabase } from '@/lib/supabase';
+import { getSignedUrl } from '@/lib/storage';
 
 type UserProfile = {
   body_photo_url: string | null;
@@ -21,7 +22,7 @@ export default function ProfileScreen() {
   const name = user?.user_metadata?.full_name ?? '—';
   const email = user?.email ?? '—';
 
-  useEffect(() => {
+  useFocusEffect(useCallback(() => {
     if (!user) return;
     (async () => {
       const { data } = await supabase
@@ -29,7 +30,12 @@ export default function ProfileScreen() {
         .select('body_photo_url, style_tags')
         .eq('id', user.id)
         .single();
-      setProfile(data);
+      if (data) {
+        const signedUrl = await getSignedUrl(data.body_photo_url ?? null);
+        setProfile({ ...data, body_photo_url: signedUrl });
+      } else {
+        setProfile(data);
+      }
 
       const { count } = await supabase
         .from('wardrobe_items')
@@ -37,7 +43,7 @@ export default function ProfileScreen() {
         .eq('user_id', user.id);
       setWardrobeCount(count ?? 0);
     })();
-  }, [user]);
+  }, [user]));
 
   async function handleSignOut() {
     Alert.alert('登出', '確定要登出嗎？', [
