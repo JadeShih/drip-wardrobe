@@ -13,11 +13,6 @@ export async function removeBackground(localUri: string): Promise<string> {
   }
 
   try {
-    // Read file as base64
-    const base64 = await FileSystem.readAsStringAsync(localUri, {
-      encoding: FileSystem.EncodingType.Base64,
-    });
-
     // Build multipart form with the image
     const formData = new FormData();
     formData.append('image_file', {
