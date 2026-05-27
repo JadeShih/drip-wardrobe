@@ -47,7 +47,7 @@ export async function removeBackground(localUri: string): Promise<string> {
 
     const outPath = `${FileSystem.cacheDirectory}rmbg_${Date.now()}.png`;
     await FileSystem.writeAsStringAsync(outPath, resultBase64, {
-      encoding: FileSystem.EncodingType.Base64,
+      encoding: 'base64' as any,
     });
 
     console.log('removeBackground: done →', outPath);
