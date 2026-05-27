@@ -178,6 +178,10 @@ export default function HomeScreen() {
       const rawBodyUrl = userData?.body_photo_url ?? null;
       const signedBodyUrl = await getSignedUrl(rawBodyUrl);
       console.log('body photo signed url:', signedBodyUrl);
+      if (signedBodyUrl) {
+        const probe = await fetch(signedBodyUrl);
+        console.log('storage probe status:', probe.status, 'content-type:', probe.headers.get('content-type'), 'content-length:', probe.headers.get('content-length'));
+      }
       setBodyPhotoUrl(signedBodyUrl);
 
       const { data: items } = await supabase
@@ -462,15 +466,25 @@ export default function HomeScreen() {
             })}
           </View>
 
-          {/* Applied outfit bar */}
+          {/* Applied outfit bar — tap to view result, 清除 to dismiss */}
           {appliedOutfit && (
-            <View style={styles.appliedBar}>
+            <TouchableOpacity
+              style={styles.appliedBar}
+              onPress={() => { setOutfitResult(appliedOutfit); setStep('result'); }}
+              activeOpacity={0.7}
+            >
               <View style={styles.appliedDot} />
               <Text style={styles.appliedTitle} numberOfLines={1}>{appliedOutfit.title}</Text>
-              <TouchableOpacity onPress={() => setAppliedOutfit(null)}>
-                <Text style={styles.appliedClear}>清除</Text>
-              </TouchableOpacity>
-            </View>
+              <View style={styles.appliedRight}>
+                <Text style={styles.appliedView}>查看 →</Text>
+                <TouchableOpacity
+                  onPress={(e) => { e.stopPropagation(); setAppliedOutfit(null); }}
+                  hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                >
+                  <Text style={styles.appliedClear}>清除</Text>
+                </TouchableOpacity>
+              </View>
+            </TouchableOpacity>
           )}
 
           {/* Item count */}
@@ -787,6 +801,8 @@ const styles = StyleSheet.create({
   },
   appliedDot: { width: 6, height: 6, backgroundColor: '#9CE41C' },
   appliedTitle: { flex: 1, fontSize: 13, color: '#9CE41C', fontWeight: '700', letterSpacing: 0.5 },
+  appliedRight: { flexDirection: 'row', alignItems: 'center', gap: 14 },
+  appliedView: { fontSize: 13, color: '#9CE41C', letterSpacing: 0.5 },
   appliedClear: { fontSize: 13, color: '#555555', letterSpacing: 1 },
 
   nudge: {
