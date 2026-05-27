@@ -43,11 +43,12 @@ export default function BodyPhotoScreen() {
         const path = `${user.id}/${fileName}`;
 
         const imgResponse = await fetch(photo);
-        const blob = await imgResponse.blob();
+        const arrayBuffer = await imgResponse.arrayBuffer();
+        console.log('arrayBuffer byteLength:', arrayBuffer.byteLength);
 
         const { error: uploadError } = await supabase.storage
           .from('wardrobe')
-          .upload(path, blob, { contentType: `image/${ext}` });
+          .upload(path, arrayBuffer, { contentType: `image/${ext}` });
         if (uploadError) throw uploadError;
 
         const { data } = supabase.storage.from('wardrobe').getPublicUrl(path);

@@ -44,11 +44,11 @@ export default function AddScreen() {
       const path = `${user.id}/wardrobe/${fileName}`;
 
       const imgResponse = await fetch(photo);
-      const blob = await imgResponse.blob();
+      const arrayBuffer = await imgResponse.arrayBuffer();
 
       const { error: uploadError } = await supabase.storage
         .from('wardrobe')
-        .upload(path, blob, { contentType: `image/${ext}`, upsert: true });
+        .upload(path, arrayBuffer, { contentType: `image/${ext}`, upsert: true });
       if (uploadError) throw uploadError;
 
       const { data } = supabase.storage.from('wardrobe').getPublicUrl(path);
