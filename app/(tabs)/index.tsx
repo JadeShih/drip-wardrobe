@@ -650,9 +650,8 @@ export default function HomeScreen() {
       <ScrollView contentContainerStyle={styles.inner} showsVerticalScrollIndicator={false}>
         <View style={styles.header}>
           <TouchableOpacity onPress={reset}>
-            <Text style={styles.back}>← 重新選擇</Text>
+            <Text style={styles.back}>← 返回</Text>
           </TouchableOpacity>
-          <Text style={styles.resultTag}>{`${occasion} × ${vibe}`}</Text>
         </View>
 
         <Text style={styles.stepTitle}>{outfitResult?.title ?? '今日穿搭'}</Text>
