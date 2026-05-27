@@ -43,7 +43,13 @@ const OCCASIONS: { label: string; en: string; icon: string }[] = [
   { label: '派對', en: 'PARTY',     icon: 'star'         },
   { label: '夜遊', en: 'NIGHT OUT', icon: 'moon'         },
 ];
-const VIBES = ['輕鬆', '正式', '帥氣', '優雅', '休閒'];
+const VIBES: { label: string; en: string; icon: string }[] = [
+  { label: '輕鬆', en: 'RELAXED',  icon: 'leaf'         },
+  { label: '正式', en: 'FORMAL',   icon: 'building.2'   },
+  { label: '帥氣', en: 'COOL',     icon: 'flame'        },
+  { label: '優雅', en: 'ELEGANT',  icon: 'sparkles'     },
+  { label: '休閒', en: 'CASUAL',   icon: 'sun.max'      },
+];
 
 type Step = 'map' | 'occasion' | 'vibe' | 'generating' | 'result';
 type WardrobeItem = { name: string; brand: string | null; photo_url: string | null };
@@ -600,25 +606,46 @@ export default function HomeScreen() {
   if (step === 'vibe') {
     return (
       <SafeAreaView style={styles.container}>
-        <ScrollView contentContainerStyle={styles.inner} showsVerticalScrollIndicator={false}>
-          <View style={styles.header}>
-            <TouchableOpacity onPress={() => setStep('occasion')}>
-              <Text style={styles.back}>← 上一步</Text>
-            </TouchableOpacity>
-          </View>
-          <Text style={styles.stepLabel}>今天的感覺</Text>
-          <Text style={styles.stepTitle}>選個氣圍</Text>
-          <View style={styles.chips}>
-            {VIBES.map(v => (
+        <View style={styles.genHeader}>
+          <TouchableOpacity onPress={() => setStep('occasion')}>
+            <Text style={styles.back}>← 返回</Text>
+          </TouchableOpacity>
+        </View>
+        <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.genInner}>
+          <Text style={styles.genTitle}>{'CHOOSE\nYOUR VIBE'}</Text>
+          <Text style={styles.genSubtitle}>選擇今天的氛圍</Text>
+
+          {VIBES.map((v, i) => {
+            const selected = vibe === v.label;
+            return (
               <TouchableOpacity
-                key={v}
-                style={[styles.chip, vibe === v && styles.chipActive]}
-                onPress={() => setVibe(v)}
+                key={v.label}
+                style={[styles.occasionRow, i === VIBES.length - 1 && { borderBottomWidth: 0 }]}
+                onPress={() => setVibe(v.label)}
+                activeOpacity={0.6}
               >
-                <Text style={[styles.chipText, vibe === v && styles.chipTextActive]}>{v}</Text>
+                <IconSymbol
+                  name={v.icon as any}
+                  size={22}
+                  color={selected ? '#fff' : '#555'}
+                />
+                <View style={styles.occasionText}>
+                  <Text style={[styles.occasionLabel, selected && styles.occasionLabelSelected]}>
+                    {v.label}
+                  </Text>
+                  <Text style={[styles.occasionEn, selected && styles.occasionEnSelected]}>
+                    {v.en}
+                  </Text>
+                </View>
+                <View style={[styles.radio, selected && styles.radioSelected]}>
+                  {selected && <IconSymbol name="checkmark" size={11} color="#0a0a0a" />}
+                </View>
               </TouchableOpacity>
-            ))}
-          </View>
+            );
+          })}
+        </ScrollView>
+
+        <View style={styles.genFooter}>
           <TouchableOpacity
             style={[styles.primaryBtn, !vibe && styles.btnDisabled]}
             onPress={generate}
@@ -626,7 +653,7 @@ export default function HomeScreen() {
           >
             <Text style={styles.primaryBtnText}>生成穿搭 →</Text>
           </TouchableOpacity>
-        </ScrollView>
+        </View>
       </SafeAreaView>
     );
   }
