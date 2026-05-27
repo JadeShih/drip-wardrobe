@@ -8,6 +8,7 @@ import { router } from 'expo-router';
 import * as ImagePicker from 'expo-image-picker';
 import { useAuth } from '@/context/AuthContext';
 import { supabase } from '@/lib/supabase';
+import { removeBackground } from '@/lib/background-removal';
 import { IconSymbol } from '@/components/ui/icon-symbol';
 
 const CATEGORIES = ['上衣', '下著', '外套', '鞋子', '配件'];
@@ -19,6 +20,14 @@ export default function AddScreen() {
   const [brand, setBrand] = useState('');
   const [category, setCategory] = useState('');
   const [uploading, setUploading] = useState(false);
+  const [removingBg, setRemovingBg] = useState(false);
+
+  async function processPhoto(uri: string) {
+    setRemovingBg(true);
+    const processed = await removeBackground(uri);
+    setPhoto(processed);
+    setRemovingBg(false);
+  }
 
   async function takePhoto() {
     const { status } = await ImagePicker.requestCameraPermissionsAsync();
@@ -27,19 +36,21 @@ export default function AddScreen() {
       return;
     }
     const result = await ImagePicker.launchCameraAsync({ allowsEditing: false, quality: 0.8 });
-    if (!result.canceled) setPhoto(result.assets[0].uri);
+    if (!result.canceled) processPhoto(result.assets[0].uri);
   }
 
   async function pickPhoto() {
     const result = await ImagePicker.launchImageLibraryAsync({ allowsEditing: false, quality: 0.8 });
-    if (!result.canceled) setPhoto(result.assets[0].uri);
+    if (!result.canceled) processPhoto(result.assets[0].uri);
   }
 
   async function saveItem() {
     if (!photo || !name.trim() || !category || !user) return;
     setUploading(true);
     try {
-      const ext = photo.split('.').pop()?.split('?')[0] ?? 'jpg';
+      // After removeBackground the file is always PNG; fall back to original ext
+      const isPng = photo.endsWith('.png');
+      const ext = isPng ? 'png' : (photo.split('.').pop()?.split('?')[0] ?? 'jpg');
       const fileName = `${Date.now()}.${ext}`;
       const path = `${user.id}/wardrobe/${fileName}`;
 
@@ -80,7 +91,7 @@ export default function AddScreen() {
     setUploading(false);
   }
 
-  const canSave = photo && name.trim() && category && !uploading;
+  const canSave = photo && name.trim() && category && !uploading && !removingBg;
 
   return (
     <SafeAreaView style={styles.container}>
@@ -93,24 +104,39 @@ export default function AddScreen() {
         <Text style={styles.title}>上傳照片</Text>
 
         {/* Photo picker */}
-        {photo ? (
+        {removingBg ? (
+          <View style={styles.removingBgBox}>
+            <ActivityIndicator color="#9CE41C" size="small" />
+            <Text style={styles.removingBgText}>自動去背中...</Text>
+          </View>
+        ) : photo ? (
           <TouchableOpacity onPress={pickPhoto} style={styles.preview}>
-            <Image source={{ uri: photo }} style={styles.previewImg} />
+            <Image
+              source={{ uri: photo }}
+              style={styles.previewImg}
+              resizeMode="contain"
+            />
             <View style={styles.previewOverlay}>
               <Text style={styles.previewChange}>點擊更換</Text>
             </View>
           </TouchableOpacity>
         ) : (
-          <View style={styles.photoActions}>
-            <TouchableOpacity style={styles.photoBtn} onPress={takePhoto}>
-              <IconSymbol name="camera.fill" size={28} color="#9CE41C" />
-              <Text style={styles.photoBtnText}>拍攝照片</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.photoBtn} onPress={pickPhoto}>
-              <IconSymbol name="photo.on.rectangle" size={28} color="#9CE41C" />
-              <Text style={styles.photoBtnText}>從相簿選擇</Text>
-            </TouchableOpacity>
-          </View>
+          <>
+            <View style={styles.photoActions}>
+              <TouchableOpacity style={styles.photoBtn} onPress={takePhoto}>
+                <IconSymbol name="camera.fill" size={28} color="#9CE41C" />
+                <Text style={styles.photoBtnText}>拍攝照片</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={styles.photoBtn} onPress={pickPhoto}>
+                <IconSymbol name="photo.on.rectangle" size={28} color="#9CE41C" />
+                <Text style={styles.photoBtnText}>從相簿選擇</Text>
+              </TouchableOpacity>
+            </View>
+            <View style={styles.photoTip}>
+              <View style={styles.photoTipDot} />
+              <Text style={styles.photoTipText}>建議使用白色或淺色背景拍攝，去背效果更佳</Text>
+            </View>
+          </>
         )}
 
         {/* Name */}
@@ -174,15 +200,24 @@ const styles = StyleSheet.create({
   stepLabel: { fontSize: 14, color: '#666666', letterSpacing: 2, marginBottom: 8 },
   title: { fontSize: 28, fontWeight: '900', color: '#fff', letterSpacing: -0.5, marginBottom: 24 },
 
-  photoActions: { flexDirection: 'row', gap: 12, marginBottom: 32 },
+  photoActions: { flexDirection: 'row', gap: 12, marginBottom: 12 },
   photoBtn: {
     flex: 1, borderWidth: 1, borderColor: '#555555', borderStyle: 'dashed',
     paddingVertical: 40, alignItems: 'center', gap: 12,
   },
   photoBtnText: { fontSize: 14, color: '#888888', letterSpacing: 1 },
+  photoTip: { flexDirection: 'row', alignItems: 'flex-start', gap: 8, marginBottom: 24 },
+  photoTipDot: { width: 5, height: 5, backgroundColor: '#9CE41C', marginTop: 5 },
+  photoTipText: { flex: 1, fontSize: 12, color: '#555555', lineHeight: 18, letterSpacing: 0.3 },
+
+  removingBgBox: {
+    height: 280, alignItems: 'center', justifyContent: 'center',
+    gap: 12, borderWidth: 1, borderColor: '#222', marginBottom: 32,
+  },
+  removingBgText: { fontSize: 13, color: '#666', letterSpacing: 1 },
 
   preview: { marginBottom: 32 },
-  previewImg: { width: '100%', height: 280, resizeMode: 'cover' },
+  previewImg: { width: '100%', height: 280 },
   previewOverlay: {
     position: 'absolute', bottom: 0, left: 0, right: 0,
     backgroundColor: 'rgba(0,0,0,0.6)', padding: 14, alignItems: 'center',
