@@ -1,5 +1,5 @@
 import { Tabs } from 'expo-router';
-import { View, StyleSheet, Text } from 'react-native';
+import { StyleSheet } from 'react-native';
 import { HapticTab } from '@/components/haptic-tab';
 import { IconSymbol } from '@/components/ui/icon-symbol';
 
@@ -34,16 +34,7 @@ export default function TabLayout() {
         name="add"
         options={{
           title: '新增',
-          tabBarIcon: ({ focused }) => focused ? (
-            <View style={[styles.addBtn, styles.addBtnActive]}>
-              <IconSymbol size={20} name="plus" color="#0a0a0a" />
-            </View>
-          ) : (
-            <IconSymbol size={22} name="plus" color="#444444" />
-          ),
-          tabBarLabel: ({ color }) => (
-            <Text style={[styles.label, { color }]}>新增</Text>
-          ),
+          tabBarIcon: ({ color }) => <IconSymbol size={22} name="plus" color={color} />,
         }}
       />
       <Tabs.Screen
@@ -72,12 +63,4 @@ const styles = StyleSheet.create({
     letterSpacing: 0.5,
     marginTop: 2,
   },
-  addBtn: {
-    width: 44,
-    height: 44,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 4,
-  },
-  addBtnActive: { backgroundColor: '#9CE41C' },
 });
