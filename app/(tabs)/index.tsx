@@ -714,7 +714,19 @@ export default function HomeScreen() {
           <TouchableOpacity style={styles.saveBtn} onPress={saveOutfit}>
             <Text style={styles.saveBtnText}>收藏這套</Text>
           </TouchableOpacity>
-          <TouchableOpacity style={styles.retryBtn} onPress={generate}>
+          <TouchableOpacity
+            style={styles.retryBtn}
+            onPress={() => {
+              if (occasion && vibe) {
+                // came from fresh generation — re-run with same occasion/vibe
+                generate();
+              } else {
+                // came from applied outfit bar — go pick a new occasion
+                setOutfitResult(null);
+                setStep('occasion');
+              }
+            }}
+          >
             <Text style={styles.retryBtnText}>換一套</Text>
           </TouchableOpacity>
         </View>
