@@ -64,11 +64,11 @@ export default function ProfileScreen() {
 
         {/* Avatar + name */}
         <View style={styles.avatarRow}>
-          {profile?.body_photo_url ? (
-            <Image source={{ uri: profile.body_photo_url }} style={styles.avatar} />
-          ) : (
-            <View style={styles.avatarPlaceholder} />
-          )}
+          <View style={styles.avatarInitial}>
+            <Text style={styles.avatarInitialText}>
+              {name !== '—' ? name.charAt(0).toUpperCase() : '?'}
+            </Text>
+          </View>
           <View>
             <Text style={styles.name}>{name}</Text>
             <Text style={styles.email}>{email}</Text>
@@ -157,8 +157,11 @@ const styles = StyleSheet.create({
   logo: { fontSize: 14, color: '#9CE41C', letterSpacing: 6, fontWeight: '800' },
 
   avatarRow: { flexDirection: 'row', alignItems: 'center', gap: 16, marginBottom: 32 },
-  avatar: { width: 64, height: 64, resizeMode: 'cover' },
-  avatarPlaceholder: { width: 64, height: 64, backgroundColor: '#1a1a1a' },
+  avatarInitial: {
+    width: 64, height: 64, backgroundColor: '#9CE41C',
+    alignItems: 'center', justifyContent: 'center',
+  },
+  avatarInitialText: { fontSize: 26, fontWeight: '900', color: '#0a0a0a' },
   name: { fontSize: 18, fontWeight: '900', color: '#fff', marginBottom: 4 },
   email: { fontSize: 14, color: '#666666' },
 
