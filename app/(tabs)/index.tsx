@@ -6,10 +6,13 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { useFocusEffect } from 'expo-router';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useAuth } from '@/context/AuthContext';
 import { supabase } from '@/lib/supabase';
 import { getSignedUrl } from '@/lib/storage';
 import { IconSymbol } from '@/components/ui/icon-symbol';
+
+const APPLIED_OUTFIT_KEY = 'drip:appliedOutfit';
 
 const { width: W } = Dimensions.get('window');
 
@@ -160,6 +163,15 @@ export default function HomeScreen() {
   const [imageGenerating, setImageGenerating] = useState(false);
   const [appliedOutfit, setAppliedOutfit] = useState<OutfitResult | null>(null);
   const dotAnim = useRef(new Animated.Value(0)).current;
+
+  // Restore last applied outfit from cache on mount
+  useEffect(() => {
+    AsyncStorage.getItem(APPLIED_OUTFIT_KEY).then(raw => {
+      if (raw) {
+        try { setAppliedOutfit(JSON.parse(raw)); } catch {}
+      }
+    });
+  }, []);
 
   useEffect(() => {
     if (!imageGenerating) { dotAnim.setValue(0); return; }
@@ -408,6 +420,7 @@ export default function HomeScreen() {
       properties: { title: outfitResult.title },
     });
     setAppliedOutfit(outfitResult);
+    AsyncStorage.setItem(APPLIED_OUTFIT_KEY, JSON.stringify(outfitResult));
     reset();
   }
 
@@ -484,7 +497,7 @@ export default function HomeScreen() {
               <View style={styles.appliedRight}>
                 <Text style={styles.appliedView}>查看 →</Text>
                 <TouchableOpacity
-                  onPress={(e) => { e.stopPropagation(); setAppliedOutfit(null); }}
+                  onPress={(e) => { e.stopPropagation(); setAppliedOutfit(null); AsyncStorage.removeItem(APPLIED_OUTFIT_KEY); }}
                   hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
                 >
                   <Text style={styles.appliedClear}>清除</Text>
