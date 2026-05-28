@@ -7,10 +7,19 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { useFocusEffect } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import * as FileSystem from 'expo-file-system/legacy';
 import { useAuth } from '@/context/AuthContext';
 import { supabase } from '@/lib/supabase';
 import { getSignedUrl } from '@/lib/storage';
 import { IconSymbol } from '@/components/ui/icon-symbol';
+
+/** Download a remote URL to a local temp file and return its local URI. */
+async function downloadToTemp(url: string): Promise<string> {
+  const ext = url.includes('.png') ? 'png' : 'jpg';
+  const dest = `${FileSystem.cacheDirectory}tryon_${Date.now()}_${Math.random().toString(36).slice(2)}.${ext}`;
+  const { uri } = await FileSystem.downloadAsync(url, dest);
+  return uri;
+}
 
 const APPLIED_OUTFIT_KEY = 'drip:appliedOutfit';
 
@@ -338,14 +347,24 @@ export default function HomeScreen() {
                 : `Fashion editorial try-on: show a person wearing these exact clothing items: ${itemsDesc}. Reference the clothing images provided. Full body shot, clean studio background, high quality fashion photography.`;
               fd.append('prompt', prompt);
 
-              // 全身照
+              // 全身照 — signed URL 需先下載到本機再傳給 OpenAI
               if (bodyPhotoUrl) {
-                fd.append('image[]', { uri: bodyPhotoUrl, type: 'image/jpeg', name: 'body.jpg' } as any);
+                try {
+                  const localBody = await downloadToTemp(bodyPhotoUrl);
+                  fd.append('image[]', { uri: localBody, type: 'image/png', name: 'body.png' } as any);
+                } catch (dlErr) {
+                  console.warn('body photo download failed:', dlErr);
+                }
               }
               // 衣物照片
               for (const { item } of result.selected) {
                 if (item.photo_url) {
-                  fd.append('image[]', { uri: item.photo_url, type: 'image/jpeg', name: 'item.jpg' } as any);
+                  try {
+                    const localItem = await downloadToTemp(item.photo_url);
+                    fd.append('image[]', { uri: localItem, type: 'image/png', name: 'item.png' } as any);
+                  } catch (dlErr) {
+                    console.warn('item photo download failed:', dlErr);
+                  }
                 }
               }
 
@@ -360,9 +379,10 @@ export default function HomeScreen() {
                 const b64 = imgJson?.data?.[0]?.b64_json;
                 const rawUrl = imgJson?.data?.[0]?.url;
                 imageUrl = rawUrl ?? (b64 ? `data:image/png;base64,${b64}` : null);
+                console.log('try-on success, imageUrl:', imageUrl ? imageUrl.slice(0, 60) : null);
               } else {
-                const errJson = await imgRes.json().catch(() => null);
-                console.error('virtual try-on error', imgRes.status, JSON.stringify(errJson));
+                const errText = await imgRes.text().catch(() => '');
+                console.error('virtual try-on error', imgRes.status, errText.slice(0, 300));
               }
             } else {
               // Fallback：純文字生成
