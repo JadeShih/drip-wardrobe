@@ -20,6 +20,7 @@ export async function removeBackground(localUri: string): Promise<string> {
       type: 'image/jpeg',
       name: 'photo.jpg',
     } as any);
+    formData.append('crop', 'false'); // keep original image dimensions, don't crop to subject
 
     const response = await fetch('https://sdk.photoroom.com/v1/segment', {
       method: 'POST',
