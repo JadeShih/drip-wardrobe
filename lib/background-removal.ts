@@ -33,6 +33,10 @@ export async function removeBackground(localUri: string): Promise<string> {
     if (!response.ok) {
       const errText = await response.text();
       console.error('removeBackground API error:', response.status, errText);
+      // 402 = quota exhausted — surface a readable error so the caller can inform the user
+      if (response.status === 402) {
+        throw new Error('QUOTA_EXHAUSTED');
+      }
       return localUri;
     }
 

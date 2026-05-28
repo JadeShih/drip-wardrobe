@@ -24,8 +24,15 @@ export default function AddScreen() {
 
   async function processPhoto(uri: string) {
     setRemovingBg(true);
-    const processed = await removeBackground(uri);
-    setPhoto(processed);
+    try {
+      const processed = await removeBackground(uri);
+      setPhoto(processed);
+    } catch (e: any) {
+      if (e?.message === 'QUOTA_EXHAUSTED') {
+        Alert.alert('去背額度已用完', '將使用原始照片繼續，可至 PhotoRoom 升級方案。');
+      }
+      setPhoto(uri); // fallback to original
+    }
     setRemovingBg(false);
   }
 

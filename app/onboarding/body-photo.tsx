@@ -18,12 +18,21 @@ export default function BodyPhotoScreen() {
 
   async function processPhoto(uri: string) {
     setRemovingBg(true);
-    const processed = await removeBackground(uri);
+    let processed = uri;
+    let quotaExhausted = false;
+    try {
+      processed = await removeBackground(uri);
+    } catch (e: any) {
+      if (e?.message === 'QUOTA_EXHAUSTED') quotaExhausted = true;
+    }
     setRemovingBg(false);
-    // Confirm before setting
+
+    const message = quotaExhausted
+      ? '去背額度已用完，將使用原始照片。確認使用這張照片？'
+      : '確認使用這張照片？';
     Alert.alert(
-      '確認使用這張照片？',
-      '確認後將自動去背並上傳。',
+      '確認照片',
+      message,
       [
         { text: '重新選擇', style: 'cancel' },
         { text: '確認使用', onPress: () => setPhoto(processed) },
