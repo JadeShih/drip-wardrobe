@@ -6,6 +6,7 @@ export default function OnboardingLayout() {
       <Stack.Screen name="welcome" />
       <Stack.Screen name="style-quiz" />
       <Stack.Screen name="style-result" />
+      <Stack.Screen name="profile-info" />
       <Stack.Screen name="body-photo" />
     </Stack>
   );

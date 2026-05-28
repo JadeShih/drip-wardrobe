@@ -31,6 +31,13 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
+        name="explore"
+        options={{
+          title: '探索',
+          tabBarIcon: ({ color }) => <IconSymbol size={22} name="sparkles" color={color} />,
+        }}
+      />
+      <Tabs.Screen
         name="add"
         options={{
           title: '新增',

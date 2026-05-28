@@ -8,7 +8,7 @@ import { supabase } from './supabase';
  */
 export async function getSignedUrl(
   publicUrl: string | null,
-  expiresIn = 3600,
+  expiresIn = 60 * 60 * 24 * 7, // 7 days
 ): Promise<string | null> {
   if (!publicUrl) return null;
 
@@ -33,7 +33,7 @@ export async function getSignedUrl(
  */
 export async function getSignedUrls(
   urls: (string | null)[],
-  expiresIn = 3600,
+  expiresIn = 60 * 60 * 24 * 7, // 7 days
 ): Promise<(string | null)[]> {
   return Promise.all(urls.map(u => getSignedUrl(u, expiresIn)));
 }

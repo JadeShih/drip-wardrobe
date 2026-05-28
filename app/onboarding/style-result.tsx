@@ -40,7 +40,7 @@ export default function StyleResultScreen() {
         style_description: desc,
       }).eq('id', user.id);
     }
-    router.push('/onboarding/body-photo');
+    router.push('/onboarding/profile-info');
   }
 
   return (

@@ -11,6 +11,8 @@ import * as FileSystem from 'expo-file-system/legacy';
 import { useAuth } from '@/context/AuthContext';
 import { supabase } from '@/lib/supabase';
 import { getSignedUrl } from '@/lib/storage';
+import { removeBackground } from '@/lib/background-removal';
+import { virtualTryOnReplicate } from '@/lib/virtual-tryon-replicate';
 import { IconSymbol } from '@/components/ui/icon-symbol';
 
 /** Download a remote URL to a local temp file and return its local URI. */
@@ -47,6 +49,45 @@ const LABEL_DEFS: { cat: string; side: 'left' | 'right'; topFrac: number }[] = [
   { cat: '鞋子', side: 'left',  topFrac: 0.80 },
 ];
 
+const STYLE_TIPS: Record<string, string[]> = {
+  '上班': [
+    '輕鬆上班風的關鍵是版型——寬鬆剪裁搭配俐落下著，舒適又有型。',
+    '辦公室穿搭以中性色為主，再用配件點綴個人風格。',
+    '一件剪裁好的西裝外套，可以讓任何休閒單品瞬間升級。',
+  ],
+  '約會': [
+    '約會穿搭不必過度，展現真實的自己才是最吸引人的。',
+    '一個精心挑選的配件，往往比整套新衣更令人印象深刻。',
+    '暖色系讓人感到親近，冷色系顯得神秘迷人——看你想傳遞什麼訊息。',
+  ],
+  '露營': [
+    '機能與風格不衝突，層次穿搭是戶外活動的最佳解法。',
+    '大地色系融入自然、耐髒又耐看，是露營穿搭的首選。',
+    '一件好的防風外層，是所有戶外穿搭的核心單品。',
+  ],
+  '運動': [
+    '選對顏色，運動時能量更滿——亮色讓你更有動力。',
+    '合身的機能剪裁讓動作更流暢，也更有運動感。',
+    'Athleisure 風格讓你從健身房直接走進咖啡廳。',
+  ],
+  '派對': [
+    '派對穿搭的秘訣：一個亮點就夠，全身閃亮反而失焦。',
+    '深色系在派對燈光下更顯神秘而有魅力。',
+    '派對是嘗試平時不敢穿的風格的最好時機。',
+  ],
+  '夜遊': [
+    '夜晚的燈光讓深色和金屬色系更加迷人。',
+    '一件剪裁好的黑色單品，是夜遊衣櫃的萬能基礎。',
+    '夜遊穿搭兼顧時尚與舒適，才能盡情享受夜晚。',
+  ],
+};
+const GENERAL_TIPS = [
+  '穿搭的最高境界不是追隨潮流，而是找到屬於自己的風格語言。',
+  '版型比品牌更重要——合身的平價單品遠勝不合身的名牌。',
+  '顏色搭配遵循「60-30-10 法則」：60% 主色、30% 輔色、10% 點綴色。',
+  '每個衣櫃都需要幾件萬能單品：白 T、牛仔褲、黑色外套。',
+];
+
 const OCCASIONS: { label: string; en: string; icon: string }[] = [
   { label: '上班', en: 'WORK',      icon: 'briefcase'    },
   { label: '約會', en: 'DATE',      icon: 'heart'        },
@@ -63,16 +104,25 @@ const VIBES: { label: string; en: string; icon: string }[] = [
   { label: '休閒', en: 'CASUAL',   icon: 'sun.max'      },
 ];
 
+const GENERATING_STEPS = [
+  '分析你的衣櫃中...',
+  '搭配最佳色系與版型...',
+  '渲染專屬穿搭圖...',
+];
+
 type Step = 'map' | 'occasion' | 'vibe' | 'generating' | 'result';
 type WardrobeItem = { name: string; brand: string | null; photo_url: string | null };
 type WardrobeMap = Record<string, WardrobeItem>;
 type GridItem = { id: string; name: string; brand: string | null; photo_url: string | null; category: string };
+
+type SuggestionItem = { category: string; description: string; reason: string };
 
 type OutfitResult = {
   selected: { category: string; item: WardrobeItem }[];
   notes: string;
   title: string;
   tryOnImageUrl?: string;
+  suggestions?: SuggestionItem[];
 };
 
 // ── Grid background ──────────────────────────────────────────────────────────
@@ -170,8 +220,13 @@ export default function HomeScreen() {
   const [vibe, setVibe] = useState('');
   const [outfitResult, setOutfitResult] = useState<OutfitResult | null>(null);
   const [imageGenerating, setImageGenerating] = useState(false);
+  const [saving, setSaving] = useState(false);
   const [appliedOutfit, setAppliedOutfit] = useState<OutfitResult | null>(null);
+  const [tipIndex, setTipIndex] = useState(0);
+  const [stepIndex, setStepIndex] = useState(0);
   const dotAnim = useRef(new Animated.Value(0)).current;
+  const tipFadeAnim = useRef(new Animated.Value(1)).current;
+  const tipIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   // Restore last applied outfit from cache on mount
   useEffect(() => {
@@ -182,14 +237,27 @@ export default function HomeScreen() {
     });
   }, []);
 
+  // 分步驟進度文字 cycling
   useEffect(() => {
-    if (!imageGenerating) { dotAnim.setValue(0); return; }
-    Animated.loop(
-      Animated.sequence([
-        Animated.timing(dotAnim, { toValue: 1, duration: 800, easing: Easing.inOut(Easing.ease), useNativeDriver: true }),
-        Animated.timing(dotAnim, { toValue: 0, duration: 800, easing: Easing.inOut(Easing.ease), useNativeDriver: true }),
-      ])
-    ).start();
+    if (!imageGenerating) { setStepIndex(0); return; }
+    const id = setInterval(() => setStepIndex(p => (p + 1) % GENERATING_STEPS.length), 2500);
+    return () => clearInterval(id);
+  }, [imageGenerating]);
+
+  // Tips 自動輪播（6 秒）
+  useEffect(() => {
+    if (!imageGenerating) {
+      setTipIndex(0);
+      tipFadeAnim.setValue(1);
+      if (tipIntervalRef.current) clearInterval(tipIntervalRef.current);
+      return;
+    }
+    function startTipTimer() {
+      if (tipIntervalRef.current) clearInterval(tipIntervalRef.current);
+      tipIntervalRef.current = setInterval(() => changeTip(1), 6000);
+    }
+    startTipTimer();
+    return () => { if (tipIntervalRef.current) clearInterval(tipIntervalRef.current); };
   }, [imageGenerating]);
 
   const firstName = user?.user_metadata?.full_name?.split(' ')[0] ?? '';
@@ -247,8 +315,25 @@ export default function HomeScreen() {
     })();
   }, [user]));
 
+  function changeTip(dir: 1 | -1) {
+    Animated.timing(tipFadeAnim, { toValue: 0, duration: 300, useNativeDriver: true }).start(() => {
+      setTipIndex(prev => prev + dir);
+      Animated.timing(tipFadeAnim, { toValue: 1, duration: 300, useNativeDriver: true }).start();
+    });
+  }
+
+  function handleTipNav(dir: 1 | -1) {
+    if (tipIntervalRef.current) clearInterval(tipIntervalRef.current);
+    tipIntervalRef.current = setInterval(() => changeTip(1), 6000);
+    changeTip(dir);
+  }
+
   async function generate() {
-    if (!occasion || !vibe || !user) return;
+    console.log('[generate] called, occasion:', occasion, 'vibe:', vibe, 'user:', !!user);
+    if (!occasion || !vibe || !user) {
+      console.warn('[generate] early return — missing occasion/vibe/user');
+      return;
+    }
     setStep('generating');
 
     supabase.from('analytics_events').insert({
@@ -266,11 +351,13 @@ export default function HomeScreen() {
         })
         .join('\n');
 
-      const prompt = `你是一位時尚造型師。用戶的衣櫃有：\n${wardrobeLines}\n\n場合：${occasion}\n氣圍：${vibe}\n\n請從衣櫃中選出最適合的單品組合，並給出簡短的穿搭建議。\n\n只回傳 JSON，不要有其他文字或 markdown：\n{\n  "title": "穿搭標題（10字內）",\n  "selected_categories": ["上衣", "下著"],\n  "notes": "穿搭建議（50字內）"\n}`;
+      const availableCategories = Object.keys(wardrobeMap);
+      const prompt = `你是一位時尚造型師。用戶的衣櫃有以下單品（格式：分類：單品名稱）：\n${wardrobeLines}\n\n場合：${occasion}\n氛圍：${vibe}\n\n請從衣櫃中選出最適合的分類組合，並建議 1-2 件衣櫃以外可以添購的單品來提升整體造型。\n\n注意：selected_categories 只能從以下分類名稱中選擇，不可以填入單品名稱：${availableCategories.join('、')}\n\n只回傳 JSON，不要有其他文字或 markdown：\n{\n  "title": "穿搭標題（10字內）",\n  "selected_categories": ${JSON.stringify(availableCategories.slice(0, 2))},\n  "notes": "穿搭建議（50字內）",\n  "suggestions": [\n    { "category": "分類名稱", "description": "單品描述（10字內）", "reason": "添購原因（15字內）" }\n  ]\n}`;
 
       const apiKey = process.env.EXPO_PUBLIC_ANTHROPIC_API_KEY;
       if (!apiKey) throw new Error('Anthropic API key not configured');
 
+      console.log('[generate] calling Anthropic API...');
       const res = await fetch('https://api.anthropic.com/v1/messages', {
         method: 'POST',
         headers: {
@@ -297,6 +384,8 @@ export default function HomeScreen() {
       const cleaned = rawContent.replace(/```json\n?|\n?```/g, '').trim();
       const content = JSON.parse(cleaned);
       const selectedCats: string[] = content.selected_categories ?? [];
+      console.log('[generate] Claude selectedCats:', selectedCats);
+      console.log('[generate] wardrobeMap keys:', Object.keys(wardrobeMap));
 
       const result: OutfitResult = {
         title: content.title ?? `${occasion} 穿搭`,
@@ -304,6 +393,7 @@ export default function HomeScreen() {
         selected: selectedCats
           .filter(cat => wardrobeMap[cat])
           .map(cat => ({ category: cat, item: wardrobeMap[cat] })),
+        suggestions: Array.isArray(content.suggestions) ? content.suggestions : [],
       };
 
       // ── 立刻顯示結果頁，圖片在背景生成 ──
@@ -311,96 +401,101 @@ export default function HomeScreen() {
       setStep('result');
 
       // 背景生成穿搭圖（虛擬試衣）
+      console.log('[generate] outfit result:', result.title, '選了', result.selected.length, '件');
+      const replicateToken = process.env.EXPO_PUBLIC_REPLICATE_API_TOKEN;
       const openaiKey = process.env.EXPO_PUBLIC_OPENAI_API_KEY;
-      if (openaiKey && result.selected.length > 0) {
+      const hasBodyPhoto = !!bodyPhotoUrl;
+      const hasItemPhotos = result.selected.some(s => !!s.item.photo_url);
+
+      if (result.selected.length > 0) {
         setImageGenerating(true);
         (async () => {
           try {
-            const categoryMap: Record<string, string> = {
-              '上衣': 'top', '下著': 'bottoms', '外套': 'outerwear', '鞋子': 'shoes', '配件': 'accessory',
-            };
-            const itemsDesc = result.selected
-              .map(({ category, item }) => {
-                const catEn = categoryMap[category] ?? category;
-                const brand = item.brand ? ` by ${item.brand}` : '';
-                return `${catEn}${brand}`;
-              })
-              .join(', ');
-
-            // 有全身照 → 用 edits 端點做虛擬試衣
-            // 沒有 → fallback 到 generations
-            const hasBodyPhoto = !!bodyPhotoUrl;
-            const hasItemPhotos = result.selected.some(s => !!s.item.photo_url);
-
             let imageUrl: string | null = null;
 
-            if (hasBodyPhoto || hasItemPhotos) {
-              // 虛擬試衣：把全身照 + 衣物照片傳給 gpt-image-1
-              const fd = new FormData();
-              fd.append('model', 'gpt-image-1');
-              fd.append('n', '1');
-              fd.append('size', '1024x1536');
-              fd.append('quality', 'medium');
-
-              const prompt = hasBodyPhoto
-                ? `Virtual try-on: dress the person in the first image with the clothing items shown in the reference images (${itemsDesc}). Keep the person's face, hair, body shape, and pose exactly the same. Only replace the clothing. Clean studio background, full body visible, fashion editorial quality.`
-                : `Fashion editorial try-on: show a person wearing these exact clothing items: ${itemsDesc}. Reference the clothing images provided. Full body shot, clean studio background, high quality fashion photography.`;
-              fd.append('prompt', prompt);
-
-              // 全身照 — signed URL 需先下載到本機再傳給 OpenAI
-              if (bodyPhotoUrl) {
-                try {
-                  const localBody = await downloadToTemp(bodyPhotoUrl);
-                  fd.append('image[]', { uri: localBody, type: 'image/png', name: 'body.png' } as any);
-                } catch (dlErr) {
-                  console.warn('body photo download failed:', dlErr);
-                }
+            // ── 優先用 IDM-VTON（Replicate）──────────────────────────────────
+            if (replicateToken && hasBodyPhoto) {
+              try {
+                console.log('[IDM-VTON] using Replicate virtual try-on');
+                const items = result.selected.map(s => ({
+                  category: s.category,
+                  name: s.item.name,
+                  brand: s.item.brand,
+                  photo_url: s.item.photo_url,
+                }));
+                imageUrl = await virtualTryOnReplicate(bodyPhotoUrl!, items, replicateToken);
+                console.log('[IDM-VTON] done, imageUrl:', imageUrl ? imageUrl.slice(0, 80) : null);
+              } catch (repErr) {
+                console.error('[IDM-VTON] failed, falling back to OpenAI:', repErr);
+                imageUrl = null;
               }
-              // 衣物照片
-              for (const { item } of result.selected) {
-                if (item.photo_url) {
+            }
+
+            // ── Fallback：OpenAI gpt-image-1 ────────────────────────────────
+            if (!imageUrl && openaiKey) {
+              const categoryMap: Record<string, string> = {
+                '上衣': 'top', '下著': 'bottoms', '外套': 'outerwear', '鞋子': 'shoes', '配件': 'accessory',
+              };
+              const itemsDesc = result.selected
+                .map(({ category, item }) => {
+                  const catEn = categoryMap[category] ?? category;
+                  const brand = item.brand ? ` by ${item.brand}` : '';
+                  return `${catEn}${brand}`;
+                })
+                .join(', ');
+
+              if (hasBodyPhoto || hasItemPhotos) {
+                const fd = new FormData();
+                fd.append('model', 'gpt-image-1');
+                fd.append('n', '1');
+                fd.append('size', '1024x1536');
+                fd.append('quality', 'medium');
+                const prompt = hasBodyPhoto
+                  ? `Virtual try-on: dress the person in the first image with the clothing items shown in the reference images (${itemsDesc}). Keep the person's face, hair, body shape, and pose exactly the same. Only replace the clothing. IMPORTANT: the full body must be visible from the top of the head to the bottom of the feet. Clean studio background, fashion editorial quality.`
+                  : `Fashion editorial photo: a person wearing ${itemsDesc}. IMPORTANT: full body from head to feet, nothing cropped. Clean white studio background, natural standing pose.`;
+                fd.append('prompt', prompt);
+                if (bodyPhotoUrl) {
                   try {
-                    const localItem = await downloadToTemp(item.photo_url);
-                    fd.append('image[]', { uri: localItem, type: 'image/png', name: 'item.png' } as any);
-                  } catch (dlErr) {
-                    console.warn('item photo download failed:', dlErr);
+                    const localBody = await downloadToTemp(bodyPhotoUrl);
+                    fd.append('image[]', { uri: localBody, type: 'image/png', name: 'body.png' } as any);
+                  } catch {}
+                }
+                for (const { item } of result.selected) {
+                  if (item.photo_url) {
+                    try {
+                      const localItem = await downloadToTemp(item.photo_url);
+                      fd.append('image[]', { uri: localItem, type: 'image/png', name: 'item.png' } as any);
+                    } catch {}
                   }
                 }
-              }
-
-              const imgRes = await fetch('https://api.openai.com/v1/images/edits', {
-                method: 'POST',
-                headers: { 'Authorization': `Bearer ${openaiKey}` },
-                body: fd,
-              });
-
-              if (imgRes.ok) {
-                const imgJson = await imgRes.json();
-                const b64 = imgJson?.data?.[0]?.b64_json;
-                const rawUrl = imgJson?.data?.[0]?.url;
-                imageUrl = rawUrl ?? (b64 ? `data:image/png;base64,${b64}` : null);
-                console.log('try-on success, imageUrl:', imageUrl ? imageUrl.slice(0, 60) : null);
+                const imgRes = await fetch('https://api.openai.com/v1/images/edits', {
+                  method: 'POST',
+                  headers: { Authorization: `Bearer ${openaiKey}` },
+                  body: fd,
+                });
+                if (imgRes.ok) {
+                  const imgJson = await imgRes.json();
+                  const b64 = imgJson?.data?.[0]?.b64_json;
+                  imageUrl = imgJson?.data?.[0]?.url ?? (b64 ? `data:image/png;base64,${b64}` : null);
+                } else {
+                  const errText = await imgRes.text().catch(() => '');
+                  console.error('OpenAI try-on error', imgRes.status, errText.slice(0, 300));
+                }
               } else {
-                const errText = await imgRes.text().catch(() => '');
-                console.error('virtual try-on error', imgRes.status, errText.slice(0, 300));
-              }
-            } else {
-              // Fallback：純文字生成
-              const imgRes = await fetch('https://api.openai.com/v1/images/generations', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${openaiKey}` },
-                body: JSON.stringify({
-                  model: 'gpt-image-1',
-                  prompt: `Fashion editorial photo: full body shot of a person wearing ${itemsDesc}. Minimal white studio background, natural standing pose, complete outfit visible from head to toe.`,
-                  n: 1,
-                  size: '1024x1536',
-                  quality: 'medium',
-                }),
-              });
-              if (imgRes.ok) {
-                const imgJson = await imgRes.json();
-                const b64 = imgJson?.data?.[0]?.b64_json;
-                imageUrl = imgJson?.data?.[0]?.url ?? (b64 ? `data:image/png;base64,${b64}` : null);
+                const imgRes = await fetch('https://api.openai.com/v1/images/generations', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${openaiKey}` },
+                  body: JSON.stringify({
+                    model: 'gpt-image-1',
+                    prompt: `Fashion editorial photo: a person wearing ${itemsDesc}. Full body from head to feet, nothing cropped. Minimal white studio background.`,
+                    n: 1, size: '1024x1536', quality: 'medium',
+                  }),
+                });
+                if (imgRes.ok) {
+                  const imgJson = await imgRes.json();
+                  const b64 = imgJson?.data?.[0]?.b64_json;
+                  imageUrl = imgJson?.data?.[0]?.url ?? (b64 ? `data:image/png;base64,${b64}` : null);
+                }
               }
             }
 
@@ -432,15 +527,41 @@ export default function HomeScreen() {
     setStep('map');
   }
 
-  function saveOutfit() {
-    if (!outfitResult || !user) return;
+  async function saveOutfit() {
+    if (!outfitResult || !user || saving) return;
+    setSaving(true);
+
+    let tryOnImageUrl = outfitResult.tryOnImageUrl;
+
+    // 如果有穿搭圖，自動去背再存到主頁
+    if (tryOnImageUrl) {
+      try {
+        let localUri: string;
+        if (tryOnImageUrl.startsWith('data:')) {
+          // base64 data URL → 寫成暫存檔
+          const base64 = tryOnImageUrl.replace(/^data:image\/\w+;base64,/, '');
+          localUri = `${FileSystem.cacheDirectory}tryon_save_${Date.now()}.png`;
+          await FileSystem.writeAsStringAsync(localUri, base64, { encoding: 'base64' as any });
+        } else {
+          localUri = await downloadToTemp(tryOnImageUrl);
+        }
+        tryOnImageUrl = await removeBackground(localUri);
+      } catch (e) {
+        console.warn('saveOutfit bg removal failed:', e);
+        // 失敗就用原圖
+      }
+    }
+
+    const outfitToSave: OutfitResult = { ...outfitResult, tryOnImageUrl };
+
     supabase.from('analytics_events').insert({
       user_id: user.id,
       event: 'outfit_saved',
       properties: { title: outfitResult.title },
     });
-    setAppliedOutfit(outfitResult);
-    AsyncStorage.setItem(APPLIED_OUTFIT_KEY, JSON.stringify(outfitResult));
+    setAppliedOutfit(outfitToSave);
+    AsyncStorage.setItem(APPLIED_OUTFIT_KEY, JSON.stringify(outfitToSave));
+    setSaving(false);
     reset();
   }
 
@@ -549,12 +670,22 @@ export default function HomeScreen() {
             </TouchableOpacity>
           )}
 
-          {/* ITEM grid */}
-          {allItems.length > 0 && (
+          {/* ITEM grid — 有套用穿搭時只顯示該套單品，否則顯示全部 */}
+          {(appliedOutfit ? appliedOutfit.selected.length > 0 : allItems.length > 0) && (
             <View style={styles.itemsSection}>
-              <Text style={styles.itemsSectionTitle}>ITEM</Text>
+              <Text style={styles.itemsSectionTitle}>
+                {appliedOutfit ? '本次穿搭單品' : 'ITEM'}
+              </Text>
               <View style={styles.itemsGrid}>
-                {allItems.map(item => (
+                {(appliedOutfit
+                  ? appliedOutfit.selected.map(s => ({
+                      id: s.category,
+                      name: s.item.name,
+                      brand: s.item.brand,
+                      photo_url: s.item.photo_url,
+                    }))
+                  : allItems
+                ).map(item => (
                   <View key={item.id} style={styles.itemCard}>
                     <Text style={styles.itemCardName} numberOfLines={1}>{item.name}</Text>
                     {item.brand
@@ -716,35 +847,52 @@ export default function HomeScreen() {
 
         <Text style={styles.stepTitle}>{outfitResult?.title ?? '今日穿搭'}</Text>
 
-        {/* Try-on image */}
+        {/* Try-on image / loading tips — 在單品格子上方 */}
         {outfitResult?.tryOnImageUrl ? (
           <Image
             source={{ uri: outfitResult.tryOnImageUrl }}
             style={styles.tryOnImage}
             resizeMode="cover"
           />
-        ) : (
-          <View style={styles.outfitPlaceholder}>
-            {imageGenerating ? (
-              <>
+        ) : imageGenerating ? (() => {
+          const allTips = [...(STYLE_TIPS[occasion] ?? []), ...GENERAL_TIPS];
+          const idx = ((tipIndex % allTips.length) + allTips.length) % allTips.length;
+          const currentTip = allTips[idx];
+          return (
+            <View style={styles.outfitPlaceholder}>
+              {/* 分步驟進度 */}
+              <View style={styles.generatingHeaderRow}>
                 <ActivityIndicator color="#9CE41C" size="small" />
-                <Text style={styles.outfitGeneratingText}>穿搭圖生成中</Text>
-                <Animated.View style={[styles.outfitGeneratingBar, {
-                  opacity: dotAnim.interpolate({ inputRange: [0, 1], outputRange: [0.3, 1] }),
-                  transform: [{ scaleX: dotAnim.interpolate({ inputRange: [0, 1], outputRange: [0.4, 1] }) }],
-                }]} />
-              </>
-            ) : (
-              <>
-                <View style={styles.outfitDot} />
-                <Text style={styles.outfitPlaceholderText}>穿搭圖</Text>
-              </>
-            )}
-          </View>
-        )}
+                <Text style={styles.outfitGeneratingStep}>{GENERATING_STEPS[stepIndex]}</Text>
+              </View>
+              <View style={styles.tipDivider} />
+              {/* Tips 內容 */}
+              <Animated.View style={[styles.tipBox, { opacity: tipFadeAnim }]}>
+                <Text style={styles.tipLabel}>STYLE TIP</Text>
+                <Text style={styles.tipContent}>{currentTip}</Text>
+              </Animated.View>
+              {/* 手動前後 + 點點指示 */}
+              <View style={styles.tipNavRow}>
+                <TouchableOpacity onPress={() => handleTipNav(-1)} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
+                  <Text style={styles.tipNavArrow}>←</Text>
+                </TouchableOpacity>
+                <View style={styles.tipDotsRow}>
+                  {allTips.map((_, i) => (
+                    <View key={i} style={[styles.tipDotItem, i === idx && styles.tipDotItemActive]} />
+                  ))}
+                </View>
+                <TouchableOpacity onPress={() => handleTipNav(1)} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
+                  <Text style={styles.tipNavArrow}>→</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          );
+        })() : null}
 
-        {/* Selected items grid */}
+        {/* Selected items grid — 立刻顯示，在穿搭圖下方 */}
         {outfitResult && outfitResult.selected.length > 0 && (
+          <View>
+          <Text style={styles.outfitGridTitle}>推薦單品</Text>
           <View style={styles.outfitGrid}>
             {outfitResult.selected.map(({ category, item }) => (
               <View key={category} style={styles.outfitGridItem}>
@@ -760,6 +908,7 @@ export default function HomeScreen() {
               </View>
             ))}
           </View>
+          </View>
         )}
 
         {/* Styling notes */}
@@ -770,9 +919,37 @@ export default function HomeScreen() {
           </View>
         ) : null}
 
+        {/* 添購建議 */}
+        {outfitResult?.suggestions && outfitResult.suggestions.length > 0 && (
+          <View style={styles.suggestionsBox}>
+            <Text style={styles.suggestionsTitle}>MISSING PIECES</Text>
+            {outfitResult.suggestions.map((s, i) => (
+              <View key={i} style={[styles.suggestionRow, i < outfitResult.suggestions!.length - 1 && styles.suggestionRowBorder]}>
+                <View style={styles.suggestionCatTag}>
+                  <Text style={styles.suggestionCat}>{s.category}</Text>
+                </View>
+                <View style={styles.suggestionInfo}>
+                  <Text style={styles.suggestionDesc}>{s.description}</Text>
+                  <Text style={styles.suggestionReason}>{s.reason}</Text>
+                </View>
+                <View style={styles.suggestionPlus}>
+                  <Text style={styles.suggestionPlusText}>+</Text>
+                </View>
+              </View>
+            ))}
+          </View>
+        )}
+
         <View style={styles.resultActions}>
-          <TouchableOpacity style={styles.saveBtn} onPress={saveOutfit}>
-            <Text style={styles.saveBtnText}>收藏這套</Text>
+          <TouchableOpacity
+            style={[styles.saveBtn, saving && { opacity: 0.6 }]}
+            onPress={saveOutfit}
+            disabled={saving}
+          >
+            {saving
+              ? <ActivityIndicator color="#0a0a0a" size="small" />
+              : <Text style={styles.saveBtnText}>收藏這套</Text>
+            }
           </TouchableOpacity>
           <TouchableOpacity
             style={styles.retryBtn}
@@ -924,6 +1101,10 @@ const styles = StyleSheet.create({
   generatingSub: { fontSize: 14, color: '#666666', letterSpacing: 1 },
 
   // Result
+  outfitGridTitle: {
+    fontSize: 13, fontWeight: '900', color: '#9CE41C',
+    letterSpacing: 3, marginBottom: 14, marginTop: 24,
+  },
   outfitGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10, marginBottom: 20 },
   outfitGridItem: { width: '47%' },
   outfitItemPhoto: { width: '100%', aspectRatio: 3 / 4, resizeMode: 'cover', backgroundColor: '#1a1a1a' },
@@ -937,13 +1118,21 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   outfitPlaceholder: {
-    width: '100%', height: 260, backgroundColor: '#111111',
-    alignItems: 'center', justifyContent: 'center', gap: 12, marginBottom: 16,
+    width: '100%', backgroundColor: '#111111',
+    paddingVertical: 28, paddingHorizontal: 20,
+    gap: 16, marginBottom: 20,
   },
-  outfitDot: { width: 20, height: 20, backgroundColor: '#1e1e1e' },
-  outfitPlaceholderText: { fontSize: 14, color: '#333333', letterSpacing: 2 },
-  outfitGeneratingText: { fontSize: 13, color: '#666666', letterSpacing: 2, marginTop: 4 },
-  outfitGeneratingBar: { width: 60, height: 2, backgroundColor: '#9CE41C', marginTop: 8 },
+  generatingHeaderRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },
+  outfitGeneratingStep: { fontSize: 13, color: '#888888', letterSpacing: 1.5 },
+  tipDivider: { height: 1, backgroundColor: '#1e1e1e', width: '100%' },
+  tipBox: { gap: 10, minHeight: 72 },
+  tipLabel: { fontSize: 11, color: '#9CE41C', letterSpacing: 3, fontWeight: '800' },
+  tipContent: { fontSize: 15, color: '#cccccc', lineHeight: 24, letterSpacing: 0.3 },
+  tipNavRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 4 },
+  tipNavArrow: { fontSize: 16, color: '#555555', fontWeight: '700', paddingHorizontal: 4 },
+  tipDotsRow: { flexDirection: 'row', gap: 6 },
+  tipDotItem: { width: 5, height: 5, backgroundColor: '#333333' },
+  tipDotItemActive: { backgroundColor: '#9CE41C' },
 
   notesBox: {
     flexDirection: 'row', gap: 12, borderWidth: 1, borderColor: '#1e1e1e',
@@ -951,6 +1140,34 @@ const styles = StyleSheet.create({
   },
   notesDot: { width: 6, height: 6, backgroundColor: '#9CE41C', marginTop: 4 },
   notesText: { flex: 1, fontSize: 14, color: '#888888', lineHeight: 22 },
+
+  suggestionsBox: {
+    borderWidth: 1, borderColor: '#1e1e1e',
+    marginBottom: 24,
+  },
+  suggestionsTitle: {
+    fontSize: 11, fontWeight: '900', color: '#9CE41C',
+    letterSpacing: 3, paddingHorizontal: 16, paddingTop: 14, paddingBottom: 10,
+    borderBottomWidth: 1, borderBottomColor: '#1e1e1e',
+  },
+  suggestionRow: {
+    flexDirection: 'row', alignItems: 'center',
+    paddingHorizontal: 16, paddingVertical: 14, gap: 12,
+  },
+  suggestionRowBorder: { borderBottomWidth: 1, borderBottomColor: '#1a1a1a' },
+  suggestionCatTag: {
+    backgroundColor: '#1a1a1a', paddingHorizontal: 8, paddingVertical: 4,
+    minWidth: 44, alignItems: 'center',
+  },
+  suggestionCat: { fontSize: 11, color: '#666666', letterSpacing: 1 },
+  suggestionInfo: { flex: 1, gap: 3 },
+  suggestionDesc: { fontSize: 14, fontWeight: '700', color: '#ffffff' },
+  suggestionReason: { fontSize: 12, color: '#555555', letterSpacing: 0.3 },
+  suggestionPlus: {
+    width: 24, height: 24, borderWidth: 1, borderColor: '#333',
+    alignItems: 'center', justifyContent: 'center',
+  },
+  suggestionPlusText: { fontSize: 16, color: '#9CE41C', lineHeight: 20 },
 
   resultActions: { flexDirection: 'row', gap: 12 },
   saveBtn: { flex: 1, backgroundColor: '#9CE41C', paddingVertical: 16, alignItems: 'center' },
