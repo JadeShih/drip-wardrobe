@@ -19,8 +19,16 @@ export default function BodyPhotoScreen() {
   async function processPhoto(uri: string) {
     setRemovingBg(true);
     const processed = await removeBackground(uri);
-    setPhoto(processed);
     setRemovingBg(false);
+    // Confirm before setting
+    Alert.alert(
+      '確認使用這張照片？',
+      '確認後將自動去背並上傳。',
+      [
+        { text: '重新選擇', style: 'cancel' },
+        { text: '確認使用', onPress: () => setPhoto(processed) },
+      ]
+    );
   }
 
   async function takePhoto() {
@@ -180,12 +188,13 @@ const styles = StyleSheet.create({
   },
   photoBtnText: { fontSize: 14, color: '#888888', letterSpacing: 1 },
   removingBgBox: {
-    height: 260, alignItems: 'center', justifyContent: 'center',
+    width: '100%', aspectRatio: 9 / 16,
+    alignItems: 'center', justifyContent: 'center',
     gap: 12, borderWidth: 1, borderColor: '#222', marginVertical: 24,
   },
   removingBgText: { fontSize: 13, color: '#666', letterSpacing: 1 },
   preview: { marginVertical: 24 },
-  previewImg: { width: '100%', height: 260 },
+  previewImg: { width: '100%', aspectRatio: 9 / 16 },
   previewOverlay: {
     position: 'absolute', bottom: 0, left: 0, right: 0,
     backgroundColor: 'rgba(0,0,0,0.6)', padding: 14, alignItems: 'center',
