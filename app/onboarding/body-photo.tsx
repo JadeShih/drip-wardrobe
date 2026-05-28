@@ -30,14 +30,14 @@ export default function BodyPhotoScreen() {
       return;
     }
     const result = await ImagePicker.launchCameraAsync({
-      allowsEditing: true, aspect: [9, 16], quality: 0.8,
+      allowsEditing: false, quality: 0.8,
     });
     if (!result.canceled) processPhoto(result.assets[0].uri);
   }
 
   async function pickPhoto() {
     const result = await ImagePicker.launchImageLibraryAsync({
-      allowsEditing: true, aspect: [9, 16], quality: 0.8,
+      allowsEditing: false, quality: 0.8,
     });
     if (!result.canceled) processPhoto(result.assets[0].uri);
   }
