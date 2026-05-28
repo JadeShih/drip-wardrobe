@@ -1,10 +1,11 @@
 import { useState } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, Image, Alert, ScrollView } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, Image, Alert, ScrollView, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router, useLocalSearchParams } from 'expo-router';
 import * as ImagePicker from 'expo-image-picker';
 import { useAuth } from '@/context/AuthContext';
 import { supabase } from '@/lib/supabase';
+import { removeBackground } from '@/lib/background-removal';
 import { IconSymbol } from '@/components/ui/icon-symbol';
 
 export default function BodyPhotoScreen() {
@@ -13,6 +14,14 @@ export default function BodyPhotoScreen() {
   const fromProfile = from === 'profile';
   const [photo, setPhoto] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
+  const [removingBg, setRemovingBg] = useState(false);
+
+  async function processPhoto(uri: string) {
+    setRemovingBg(true);
+    const processed = await removeBackground(uri);
+    setPhoto(processed);
+    setRemovingBg(false);
+  }
 
   async function takePhoto() {
     const { status } = await ImagePicker.requestCameraPermissionsAsync();
@@ -23,14 +32,14 @@ export default function BodyPhotoScreen() {
     const result = await ImagePicker.launchCameraAsync({
       allowsEditing: true, aspect: [3, 4], quality: 0.8,
     });
-    if (!result.canceled) setPhoto(result.assets[0].uri);
+    if (!result.canceled) processPhoto(result.assets[0].uri);
   }
 
   async function pickPhoto() {
     const result = await ImagePicker.launchImageLibraryAsync({
       allowsEditing: true, aspect: [3, 4], quality: 0.8,
     });
-    if (!result.canceled) setPhoto(result.assets[0].uri);
+    if (!result.canceled) processPhoto(result.assets[0].uri);
   }
 
   async function saveAndFinish() {
@@ -38,7 +47,8 @@ export default function BodyPhotoScreen() {
     setUploading(true);
     try {
       if (photo) {
-        const ext = photo.split('.').pop()?.split('?')[0] ?? 'jpg';
+        const isPng = photo.endsWith('.png');
+        const ext = isPng ? 'png' : (photo.split('.').pop()?.split('?')[0] ?? 'jpg');
         const fileName = `body-photo-${Date.now()}.${ext}`;
         const path = `${user.id}/${fileName}`;
 
@@ -107,9 +117,14 @@ export default function BodyPhotoScreen() {
           </View>
         </View>
 
-        {photo ? (
+        {removingBg ? (
+          <View style={styles.removingBgBox}>
+            <ActivityIndicator color="#9CE41C" size="small" />
+            <Text style={styles.removingBgText}>自動去背中...</Text>
+          </View>
+        ) : photo ? (
           <TouchableOpacity onPress={pickPhoto} style={styles.preview}>
-            <Image source={{ uri: photo }} style={styles.previewImg} />
+            <Image source={{ uri: photo }} style={styles.previewImg} resizeMode="contain" />
             <View style={styles.previewOverlay}>
               <Text style={styles.previewChange}>點擊更換</Text>
             </View>
@@ -128,12 +143,12 @@ export default function BodyPhotoScreen() {
         )}
 
         <TouchableOpacity
-          style={[styles.btn, uploading && styles.btnDisabled]}
+          style={[styles.btn, (uploading || removingBg) && styles.btnDisabled]}
           onPress={saveAndFinish}
-          disabled={uploading}
+          disabled={uploading || removingBg}
         >
           <Text style={styles.btnText}>
-            {uploading ? '儲存中...' : photo ? '儲存並開始 →' : '略過，直接開始 →'}
+            {uploading ? '儲存中...' : removingBg ? '處理中...' : photo ? '儲存並開始 →' : '略過，直接開始 →'}
           </Text>
         </TouchableOpacity>
       </ScrollView>
@@ -164,8 +179,13 @@ const styles = StyleSheet.create({
     paddingVertical: 40, alignItems: 'center', gap: 12,
   },
   photoBtnText: { fontSize: 14, color: '#888888', letterSpacing: 1 },
+  removingBgBox: {
+    height: 260, alignItems: 'center', justifyContent: 'center',
+    gap: 12, borderWidth: 1, borderColor: '#222', marginVertical: 24,
+  },
+  removingBgText: { fontSize: 13, color: '#666', letterSpacing: 1 },
   preview: { marginVertical: 24 },
-  previewImg: { width: '100%', height: 260, resizeMode: 'cover' },
+  previewImg: { width: '100%', height: 260 },
   previewOverlay: {
     position: 'absolute', bottom: 0, left: 0, right: 0,
     backgroundColor: 'rgba(0,0,0,0.6)', padding: 14, alignItems: 'center',
