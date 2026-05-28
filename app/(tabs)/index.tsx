@@ -777,8 +777,8 @@ const styles = StyleSheet.create({
 
   // Figure map
   figureContainer: { position: 'relative', marginHorizontal: -24, overflow: 'hidden' },
-  figureWrap: { position: 'absolute', overflow: 'hidden', backgroundColor: '#111111' },
-  bodyPhoto: { width: '100%', height: '100%', resizeMode: 'contain' },
+  figureWrap: { position: 'absolute' },
+  bodyPhoto: { width: '100%', height: '100%', resizeMode: 'cover' },
   silhouette: {
     flex: 1, alignItems: 'center', justifyContent: 'center',
     backgroundColor: '#141414',
