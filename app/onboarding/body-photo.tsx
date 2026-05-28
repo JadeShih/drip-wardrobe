@@ -166,7 +166,7 @@ export default function BodyPhotoScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#0a0a0a' },
-  inner: { flex: 1, paddingHorizontal: 24, justifyContent: 'space-between', paddingBottom: 40 },
+  inner: { paddingHorizontal: 24, paddingBottom: 40 },
   backBtn: { marginTop: 16, marginBottom: 8 },
   backText: { fontSize: 14, color: '#9CE41C', fontWeight: '700', letterSpacing: 1 },
   top: { marginTop: 24 },
