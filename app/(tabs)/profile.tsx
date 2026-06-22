@@ -3,6 +3,7 @@ import {
   View, Text, TouchableOpacity, StyleSheet,
   ScrollView, Image, Alert,
 } from 'react-native';
+import { IconSymbol } from '@/components/ui/icon-symbol';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router, useFocusEffect } from 'expo-router';
 import { useAuth } from '@/context/AuthContext';
@@ -12,12 +13,25 @@ import { getSignedUrl } from '@/lib/storage';
 type UserProfile = {
   body_photo_url: string | null;
   style_tags: string[] | null;
+  gender: string | null;
+  height: string | null;
+  body_type: string | null;
+};
+
+type WishlistItem = {
+  id: string;
+  category: string;
+  description: string;
+  reason: string | null;
+  purchased: boolean;
+  created_at: string;
 };
 
 export default function ProfileScreen() {
   const { user, signOut } = useAuth();
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [wardrobeCount, setWardrobeCount] = useState(0);
+  const [wishlist, setWishlist] = useState<WishlistItem[]>([]);
 
   const name = user?.user_metadata?.full_name ?? '—';
   const email = user?.email ?? '—';
@@ -27,7 +41,7 @@ export default function ProfileScreen() {
     (async () => {
       const { data } = await supabase
         .from('users')
-        .select('body_photo_url, style_tags')
+        .select('body_photo_url, style_tags, gender, height, body_type')
         .eq('id', user.id)
         .single();
       if (data) {
@@ -42,8 +56,28 @@ export default function ProfileScreen() {
         .select('*', { count: 'exact', head: true })
         .eq('user_id', user.id);
       setWardrobeCount(count ?? 0);
+
+      const { data: wishlistData } = await supabase
+        .from('wishlist_items')
+        .select('*')
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false });
+      setWishlist(wishlistData ?? []);
     })();
   }, [user]));
+
+  async function deleteWishlistItem(id: string) {
+    Alert.alert('移除', '確定從願望清單移除？', [
+      { text: '取消', style: 'cancel' },
+      {
+        text: '移除', style: 'destructive',
+        onPress: async () => {
+          await supabase.from('wishlist_items').delete().eq('id', id);
+          setWishlist(prev => prev.filter(w => w.id !== id));
+        },
+      },
+    ]);
+  }
 
   async function handleSignOut() {
     Alert.alert('登出', '確定要登出嗎？', [
@@ -137,9 +171,66 @@ export default function ProfileScreen() {
           </TouchableOpacity>
         </View>
 
+        {/* 願望清單 */}
+        <View style={styles.section}>
+          <View style={styles.wishlistHeader}>
+            <Text style={styles.sectionLabel}>願望清單</Text>
+            {wishlist.length > 0 && (
+              <Text style={styles.wishlistCount}>{wishlist.length} 件</Text>
+            )}
+          </View>
+          {wishlist.length === 0 ? (
+            <View style={styles.wishlistEmpty}>
+              <Text style={styles.wishlistEmptyText}>還沒有願望清單</Text>
+              <Text style={styles.wishlistEmptyHint}>在穿搭結果頁點擊 MISSING PIECES 的 + 加入</Text>
+            </View>
+          ) : (
+            <View style={styles.wishlistList}>
+              {wishlist.map(item => (
+                <View key={item.id} style={styles.wishlistItem}>
+                  <View style={styles.wishlistInfo}>
+                    <Text style={styles.wishlistCat}>{item.category}</Text>
+                    <Text style={styles.wishlistDesc}>{item.description}</Text>
+                    {item.reason ? (
+                      <Text style={styles.wishlistReason}>{item.reason}</Text>
+                    ) : null}
+                  </View>
+                  <TouchableOpacity
+                    onPress={() => deleteWishlistItem(item.id)}
+                    hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                  >
+                    <IconSymbol name="xmark" size={14} color="#555" />
+                  </TouchableOpacity>
+                </View>
+              ))}
+            </View>
+          )}
+        </View>
+
         {/* Actions */}
         <View style={styles.section}>
           <Text style={styles.sectionLabel}>設定</Text>
+          <TouchableOpacity
+            style={styles.row}
+            onPress={() => router.push('/onboarding/profile-info?from=profile')}
+          >
+            <View style={{ gap: 4, flex: 1 }}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                <Text style={styles.rowText}>穿搭輪廓</Text>
+                {profile?.gender && profile?.body_type && (
+                  <View style={styles.doneTag}>
+                    <Text style={styles.doneTagText}>✓ 已設定</Text>
+                  </View>
+                )}
+              </View>
+              <Text style={styles.rowSubText}>
+                {profile?.gender && profile?.body_type
+                  ? '性別、身高、體型...'
+                  : '尚未設定 — 影響 AI 生成效果'}
+              </Text>
+            </View>
+            <Text style={styles.rowArrow}>→</Text>
+          </TouchableOpacity>
         </View>
 
         <TouchableOpacity style={styles.signOutBtn} onPress={handleSignOut}>
@@ -201,7 +292,30 @@ const styles = StyleSheet.create({
     paddingVertical: 16, borderBottomWidth: 1, borderBottomColor: '#1a1a1a',
   },
   rowText: { fontSize: 14, color: '#fff', letterSpacing: 0.5 },
+  rowSubText: { fontSize: 12, color: '#888', letterSpacing: 0.3, marginTop: 2 },
+  doneTag: {
+    backgroundColor: 'rgba(156,228,28,0.12)',
+    borderWidth: 1, borderColor: 'rgba(156,228,28,0.3)',
+    paddingHorizontal: 8, paddingVertical: 2,
+  },
+  doneTagText: { fontSize: 11, color: '#9CE41C', fontWeight: '700', letterSpacing: 0.5 },
   rowArrow: { fontSize: 16, color: '#666666' },
+
+  // Wishlist
+  wishlistHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 },
+  wishlistCount: { fontSize: 12, color: '#9CE41C', letterSpacing: 1 },
+  wishlistEmpty: { borderWidth: 1, borderColor: '#1a1a1a', borderStyle: 'dashed', padding: 20, alignItems: 'center', gap: 8 },
+  wishlistEmptyText: { fontSize: 14, color: '#444', letterSpacing: 0.5 },
+  wishlistEmptyHint: { fontSize: 12, color: '#333', textAlign: 'center', lineHeight: 18 },
+  wishlistList: { gap: 1 },
+  wishlistItem: {
+    flexDirection: 'row', alignItems: 'center', gap: 12,
+    backgroundColor: '#111', paddingHorizontal: 14, paddingVertical: 14,
+  },
+  wishlistInfo: { flex: 1, gap: 3 },
+  wishlistCat: { fontSize: 10, color: '#9CE41C', letterSpacing: 2, marginBottom: 2 },
+  wishlistDesc: { fontSize: 14, fontWeight: '700', color: '#fff' },
+  wishlistReason: { fontSize: 12, color: '#555', lineHeight: 18 },
 
   signOutBtn: {
     borderWidth: 1, borderColor: '#333333',

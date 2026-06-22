@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
 import {
   View, Text, TouchableOpacity, StyleSheet,
-  ScrollView, Image, ActivityIndicator, Animated, Easing,
+  ScrollView, Image, ActivityIndicator, Animated, Easing, Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useAuth } from '@/context/AuthContext';
@@ -17,12 +17,6 @@ type UserProfile = {
 
 const GENDER_LABEL: Record<string, string> = {
   female: 'female', male: 'male', unisex: 'androgynous',
-};
-const SKIN_LABEL: Record<string, string> = {
-  light: 'fair skin', medium: 'medium skin tone', dark: 'deep skin tone',
-};
-const HEIGHT_LABEL: Record<string, string> = {
-  petite: 'petite', medium: 'average height', tall: 'tall',
 };
 const BODY_LABEL: Record<string, string> = {
   straight: 'straight body type', pear: 'pear body shape',
@@ -65,7 +59,27 @@ export default function ExploreScreen() {
   const [vibe, setVibe] = useState('');
   const [outfits, setOutfits] = useState<LookbookOutfit[]>([]);
   const [profile, setProfile] = useState<UserProfile>({});
+  const [genStepIndex, setGenStepIndex] = useState(0);
+  const [imgStepIndex, setImgStepIndex] = useState(0);
   const spinAnim = useRef(new Animated.Value(0)).current;
+  const imgStepRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  const GEN_STEPS = [
+    '分析場合與氛圍...',
+    '構思穿搭輪廓...',
+    '挑選主打單品...',
+    '增加配飾細節...',
+    '調整色系搭配...',
+    '完成造型提案...',
+  ];
+
+  const IMG_STEPS = [
+    'AI 分析穿搭元素...',
+    '調整光線與色調...',
+    '增加配飾細節...',
+    '渲染最終畫面...',
+    '完成編輯圖...',
+  ];
 
   useEffect(() => {
     if (!user) return;
@@ -76,10 +90,40 @@ export default function ExploreScreen() {
       .then(({ data }) => { if (data) setProfile(data); });
   }, [user]);
 
+  const genStepRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  // 圖片生成中的步驟文字
+  useEffect(() => {
+    const anyGenerating = outfits.some(o => o.imageGenerating);
+    if (!anyGenerating) {
+      if (imgStepRef.current) { clearInterval(imgStepRef.current); imgStepRef.current = null; }
+      setImgStepIndex(0);
+      return;
+    }
+    if (!imgStepRef.current) {
+      imgStepRef.current = setInterval(() => {
+        setImgStepIndex(p => (p + 1) % IMG_STEPS.length);
+      }, 2000);
+    }
+    return () => {
+      if (imgStepRef.current) { clearInterval(imgStepRef.current); imgStepRef.current = null; }
+    };
+  }, [outfits]);
+
   function startSpin() {
     Animated.loop(
       Animated.timing(spinAnim, { toValue: 1, duration: 1200, easing: Easing.linear, useNativeDriver: true })
     ).start();
+    // 分步驟文字 cycling
+    setGenStepIndex(0);
+    genStepRef.current = setInterval(() => {
+      setGenStepIndex(p => (p + 1) % GEN_STEPS.length);
+    }, 1800);
+  }
+
+  function stopSpin() {
+    spinAnim.stopAnimation();
+    if (genStepRef.current) { clearInterval(genStepRef.current); genStepRef.current = null; }
   }
 
   async function generate() {
@@ -135,7 +179,7 @@ export default function ExploreScreen() {
       }));
       setOutfits(initialOutfits);
       setStep('result');
-      spinAnim.stopAnimation();
+      stopSpin();
 
       // 逐一生成圖片
       const openaiKey = process.env.EXPO_PUBLIC_OPENAI_API_KEY;
@@ -145,11 +189,9 @@ export default function ExploreScreen() {
             .map(i => `${i.color} ${i.description}`)
             .join(', ');
           const genderStr = GENDER_LABEL[profile.gender ?? ''] ?? 'female';
-          const skinStr = profile.skin_tone ? `, ${SKIN_LABEL[profile.skin_tone] ?? ''}` : '';
-          const heightStr = profile.height ? `, ${HEIGHT_LABEL[profile.height] ?? ''}` : '';
           const bodyStr = profile.body_type ? `, ${BODY_LABEL[profile.body_type] ?? ''}` : '';
-          const modelDesc = `${genderStr} model${skinStr}${heightStr}${bodyStr}`;
-          const imgPrompt = `Fashion editorial lookbook photo: full body shot of a ${modelDesc} wearing ${itemsDesc}. Style: ${outfit.style}. IMPORTANT: complete figure visible from head to feet, nothing cropped. Minimal clean studio background, high fashion photography quality.`;
+          const modelDesc = `Taiwanese East Asian ${genderStr} model${bodyStr}`;
+          const imgPrompt = `Fashion editorial lookbook photo: full body shot of a ${modelDesc} wearing ${itemsDesc}. Style: ${outfit.style}. IMPORTANT: the model must look East Asian / Taiwanese. Complete figure visible from head to feet, nothing cropped. Minimal clean studio background, high fashion photography quality.`;
 
           fetch('https://api.openai.com/v1/images/generations', {
             method: 'POST',
@@ -188,6 +230,7 @@ export default function ExploreScreen() {
       }
     } catch (e) {
       console.error('explore generate error:', e);
+      stopSpin();
       setStep('pick');
     }
   }
@@ -196,7 +239,9 @@ export default function ExploreScreen() {
     setOccasion('');
     setVibe('');
     setOutfits([]);
+    stopSpin();
     spinAnim.setValue(0);
+    setGenStepIndex(0);
     setStep('landing');
   }
 
@@ -219,10 +264,11 @@ export default function ExploreScreen() {
               '3 套完整穿搭概念',
               '每套配有 AI 編輯圖',
               '依場合與氛圍量身設計',
+              'AI 生成通用模特兒展示，非個人照片',
             ].map((f, i) => (
-              <View key={i} style={styles.featureRow}>
-                <View style={styles.featureDot} />
-                <Text style={styles.featureText}>{f}</Text>
+              <View key={i} style={[styles.featureRow, i === 3 && { marginTop: 4 }]}>
+                <View style={[styles.featureDot, i === 3 && { backgroundColor: '#444' }]} />
+                <Text style={[styles.featureText, i === 3 && { color: '#555', fontSize: 12 }]}>{f}</Text>
               </View>
             ))}
           </View>
@@ -300,6 +346,10 @@ export default function ExploreScreen() {
           </Animated.View>
           <Text style={styles.generatingText}>AI 造型師構思中</Text>
           <Text style={styles.generatingSub}>{occasion} × {vibe}</Text>
+          <View style={styles.genStepBox}>
+            <View style={styles.genStepDot} />
+            <Text style={styles.genStepText}>{GEN_STEPS[genStepIndex]}</Text>
+          </View>
         </View>
       </SafeAreaView>
     );
@@ -313,7 +363,16 @@ export default function ExploreScreen() {
           <TouchableOpacity onPress={() => setStep('pick')}>
             <Text style={styles.back}>← 重新選擇</Text>
           </TouchableOpacity>
-          <TouchableOpacity onPress={reset}>
+          <TouchableOpacity onPress={() => {
+            Alert.alert(
+              '重置 Lookbook',
+              '確定要清空目前的結果並重新選擇嗎？',
+              [
+                { text: '取消', style: 'cancel' },
+                { text: '確定清空', style: 'destructive', onPress: reset },
+              ]
+            );
+          }}>
             <Text style={styles.resetText}>重置</Text>
           </TouchableOpacity>
         </View>
@@ -339,6 +398,10 @@ export default function ExploreScreen() {
                   <>
                     <ActivityIndicator color="#9CE41C" size="small" />
                     <Text style={styles.cardImageLoading}>編輯圖生成中</Text>
+                    <View style={styles.imgStepBox}>
+                      <View style={styles.imgStepDot} />
+                      <Text style={styles.imgStepText}>{IMG_STEPS[imgStepIndex]}</Text>
+                    </View>
                   </>
                 )}
               </View>
@@ -405,6 +468,13 @@ const styles = StyleSheet.create({
   generatingBox: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 20 },
   generatingText: { fontSize: 18, color: '#fff', fontWeight: '700', letterSpacing: 0.5 },
   generatingSub: { fontSize: 14, color: '#555', letterSpacing: 2 },
+  genStepBox: {
+    flexDirection: 'row', alignItems: 'center', gap: 8,
+    marginTop: 8, paddingHorizontal: 20, paddingVertical: 10,
+    borderWidth: 1, borderColor: '#1e1e1e',
+  },
+  genStepDot: { width: 5, height: 5, backgroundColor: '#9CE41C' },
+  genStepText: { fontSize: 13, color: '#666', letterSpacing: 1.5 },
 
   // Buttons
   primaryBtn: { backgroundColor: '#9CE41C', paddingVertical: 18, alignItems: 'center' },
@@ -430,7 +500,10 @@ const styles = StyleSheet.create({
     width: '100%', aspectRatio: 2 / 3, backgroundColor: '#111',
     alignItems: 'center', justifyContent: 'center', gap: 12, marginBottom: 20,
   },
-  cardImageLoading: { fontSize: 12, color: '#444', letterSpacing: 1 },
+  cardImageLoading: { fontSize: 12, color: '#555', letterSpacing: 1 },
+  imgStepBox: { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 4 },
+  imgStepDot: { width: 4, height: 4, backgroundColor: '#9CE41C' },
+  imgStepText: { fontSize: 11, color: '#666', letterSpacing: 1 },
   cardTitle: { fontSize: 22, fontWeight: '900', color: '#fff', letterSpacing: -0.3, marginBottom: 16 },
   cardItems: { gap: 10, marginBottom: 16, borderLeftWidth: 1, borderLeftColor: '#1e1e1e', paddingLeft: 14 },
   cardItemRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },

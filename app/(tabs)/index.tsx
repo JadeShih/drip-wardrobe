@@ -222,6 +222,18 @@ export default function HomeScreen() {
   const [imageGenerating, setImageGenerating] = useState(false);
   const [saving, setSaving] = useState(false);
   const [appliedOutfit, setAppliedOutfit] = useState<OutfitResult | null>(null);
+  const [addedWishlist, setAddedWishlist] = useState<Map<number, string>>(new Map()); // index → wishlist item id
+  const toastOpacity = useRef(new Animated.Value(0)).current;
+  const toastTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  function showToast() {
+    if (toastTimeout.current) clearTimeout(toastTimeout.current);
+    Animated.sequence([
+      Animated.timing(toastOpacity, { toValue: 1, duration: 200, useNativeDriver: true }),
+      Animated.delay(4000),
+      Animated.timing(toastOpacity, { toValue: 0, duration: 300, useNativeDriver: true }),
+    ]).start();
+  }
   const [tipIndex, setTipIndex] = useState(0);
   const [stepIndex, setStepIndex] = useState(0);
   const dotAnim = useRef(new Animated.Value(0)).current;
@@ -527,6 +539,36 @@ export default function HomeScreen() {
     setStep('map');
   }
 
+  async function toggleWishlist(s: SuggestionItem, index: number) {
+    if (!user) return;
+
+    if (addedWishlist.has(index)) {
+      // 已加入 → 取消
+      const itemId = addedWishlist.get(index)!;
+      const { error } = await supabase.from('wishlist_items').delete().eq('id', itemId);
+      if (!error) {
+        setAddedWishlist(prev => { const next = new Map(prev); next.delete(index); return next; });
+      }
+    } else {
+      // 未加入 → 加入
+      const { data, error } = await supabase.from('wishlist_items').insert({
+        user_id: user.id,
+        category: s.category,
+        description: s.description,
+        reason: s.reason,
+      }).select('id').single();
+      if (!error && data) {
+        setAddedWishlist(prev => new Map(prev).set(index, data.id));
+        showToast();
+        supabase.from('analytics_events').insert({
+          user_id: user.id,
+          event: 'wishlist_item_added',
+          properties: { category: s.category, description: s.description },
+        });
+      }
+    }
+  }
+
   async function saveOutfit() {
     if (!outfitResult || !user || saving) return;
     setSaving(true);
@@ -610,14 +652,21 @@ export default function HomeScreen() {
               )}
             </View>
 
-            {/* Labels — show applied outfit items if available, else wardrobe defaults */}
+            {/* Labels — 有套用穿搭時只顯示有搭配的類別，否則顯示衣櫃已有的 */}
             {LABEL_DEFS.map(({ cat, side, topFrac }) => {
               const appliedItem = appliedOutfit?.selected.find(s => s.category === cat)?.item;
+              const wardrobeItem = wardrobeMap[cat];
+
+              // 有套用穿搭：只顯示該穿搭選到的類別
+              if (appliedOutfit && !appliedItem) return null;
+              // 無套用穿搭：只顯示衣櫃裡有的類別
+              if (!appliedOutfit && !wardrobeItem) return null;
+
               return (
                 <LabelChip
                   key={cat}
                   cat={cat}
-                  item={appliedItem ?? wardrobeMap[cat]}
+                  item={appliedItem ?? wardrobeItem}
                   side={side}
                   top={FIG_TOP + topFrac * FIG_H}
                   highlighted={!!appliedItem}
@@ -923,20 +972,29 @@ export default function HomeScreen() {
         {outfitResult?.suggestions && outfitResult.suggestions.length > 0 && (
           <View style={styles.suggestionsBox}>
             <Text style={styles.suggestionsTitle}>MISSING PIECES</Text>
-            {outfitResult.suggestions.map((s, i) => (
-              <View key={i} style={[styles.suggestionRow, i < outfitResult.suggestions!.length - 1 && styles.suggestionRowBorder]}>
-                <View style={styles.suggestionCatTag}>
-                  <Text style={styles.suggestionCat}>{s.category}</Text>
+            {outfitResult.suggestions.map((s, i) => {
+              const added = addedWishlist.has(i);
+              return (
+                <View key={i} style={[styles.suggestionRow, i < outfitResult.suggestions!.length - 1 && styles.suggestionRowBorder]}>
+                  <View style={styles.suggestionCatTag}>
+                    <Text style={styles.suggestionCat}>{s.category}</Text>
+                  </View>
+                  <View style={styles.suggestionInfo}>
+                    <Text style={styles.suggestionDesc}>{s.description}</Text>
+                    <Text style={styles.suggestionReason}>{s.reason}</Text>
+                  </View>
+                  <TouchableOpacity
+                    style={[styles.suggestionPlus, added && styles.suggestionPlusAdded]}
+                    onPress={() => toggleWishlist(s, i)}
+                    hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                  >
+                    <Text style={[styles.suggestionPlusText, added && styles.suggestionPlusTextAdded]}>
+                      {added ? '✓' : '+'}
+                    </Text>
+                  </TouchableOpacity>
                 </View>
-                <View style={styles.suggestionInfo}>
-                  <Text style={styles.suggestionDesc}>{s.description}</Text>
-                  <Text style={styles.suggestionReason}>{s.reason}</Text>
-                </View>
-                <View style={styles.suggestionPlus}>
-                  <Text style={styles.suggestionPlusText}>+</Text>
-                </View>
-              </View>
-            ))}
+              );
+            })}
           </View>
         )}
 
@@ -968,6 +1026,16 @@ export default function HomeScreen() {
           </TouchableOpacity>
         </View>
       </ScrollView>
+
+      {/* Toast */}
+      <Animated.View style={[styles.toast, { opacity: toastOpacity }]}>
+        <View style={styles.toastDot} />
+        <Text style={styles.toastText}>已加入願望清單</Text>
+        <TouchableOpacity onPress={() => router.push('/(tabs)/profile')}>
+          <Text style={styles.toastHint}>前往查看 →</Text>
+        </TouchableOpacity>
+      </Animated.View>
+
     </SafeAreaView>
   );
 }
@@ -1167,7 +1235,19 @@ const styles = StyleSheet.create({
     width: 24, height: 24, borderWidth: 1, borderColor: '#333',
     alignItems: 'center', justifyContent: 'center',
   },
+  suggestionPlusAdded: { borderColor: '#9CE41C', backgroundColor: '#9CE41C' },
   suggestionPlusText: { fontSize: 16, color: '#9CE41C', lineHeight: 20 },
+  suggestionPlusTextAdded: { color: '#0a0a0a', fontSize: 13, fontWeight: '800' },
+
+  toast: {
+    position: 'absolute', bottom: 24, left: 24, right: 24,
+    backgroundColor: '#1a1a1a', borderWidth: 1, borderColor: '#2a2a2a',
+    flexDirection: 'row', alignItems: 'center', gap: 10,
+    paddingHorizontal: 16, paddingVertical: 14,
+  },
+  toastDot: { width: 6, height: 6, backgroundColor: '#9CE41C' },
+  toastText: { flex: 1, fontSize: 14, color: '#fff', fontWeight: '600' },
+  toastHint: { fontSize: 13, color: '#9CE41C', letterSpacing: 0.5 },
 
   resultActions: { flexDirection: 'row', gap: 12 },
   saveBtn: { flex: 1, backgroundColor: '#9CE41C', paddingVertical: 16, alignItems: 'center' },
