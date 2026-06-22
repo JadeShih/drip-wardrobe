@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { View, Text, StyleSheet, Animated } from 'react-native';
+import { Audio } from 'expo-av';
 
 const CHARS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789#@!$%&*';
 const DRIP_LETTERS = ['D', 'R', 'I', 'P'];
@@ -38,6 +39,7 @@ export default function DripSplash({ onFinished }: Props) {
 
   const lockedRef = useRef([false, false, false, false]);
   const timers = useRef<ReturnType<typeof setTimeout>[]>([]);
+  const soundRef = useRef<Audio.Sound | null>(null);
 
   function later(fn: () => void, ms: number) {
     const t = setTimeout(fn, ms);
@@ -45,6 +47,14 @@ export default function DripSplash({ onFinished }: Props) {
   }
 
   useEffect(() => {
+    Audio.setAudioModeAsync({ playsInSilentModeIOS: true });
+    Audio.Sound.createAsync(
+      require('../assets/audio/splash.mp3'),
+      { shouldPlay: true, volume: 1 }
+    ).then(({ sound }) => {
+      soundRef.current = sound;
+    }).catch(() => {});
+
     // ── Phase 1：色塊 + 時尚詞 ──────────────────────────────────────────
     WORD_BEATS.forEach((t, i) => {
       const nextT = WORD_BEATS[i + 1] ?? (t + 929);
@@ -108,6 +118,7 @@ export default function DripSplash({ onFinished }: Props) {
     return () => {
       timers.current.forEach(t => clearTimeout(t));
       clearInterval(scrambleId);
+      soundRef.current?.unloadAsync();
     };
   }, []);
 
