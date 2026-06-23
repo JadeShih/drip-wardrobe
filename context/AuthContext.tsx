@@ -1,5 +1,6 @@
 import { createContext, useContext, useEffect, useState } from 'react';
 import { Session, User } from '@supabase/supabase-js';
+import { router } from 'expo-router';
 import { supabase } from '@/lib/supabase';
 
 type AuthContextType = {
@@ -34,9 +35,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     });
 
     // 監聽 auth 狀態變化
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       setSession(session);
       setUser(session?.user ?? null);
+      if (event === 'PASSWORD_RECOVERY') {
+        router.replace('/(auth)/reset-password');
+      }
     });
 
     return () => subscription.unsubscribe();

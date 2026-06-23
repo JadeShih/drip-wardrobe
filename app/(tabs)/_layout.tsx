@@ -14,6 +14,7 @@ export default function TabLayout() {
         tabBarInactiveTintColor: '#444444',
         tabBarShowLabel: true,
         tabBarLabelStyle: styles.label,
+        sceneStyle: { backgroundColor: '#0a0a0a' },
       }}
     >
       <Tabs.Screen

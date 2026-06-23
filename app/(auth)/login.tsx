@@ -61,7 +61,7 @@ export default function LoginScreen() {
     >
       <View style={styles.inner}>
         <Text style={styles.logo}>DRIP</Text>
-        <Text style={styles.subtitle}>YOUR AI WARDROBE STYLIST</Text>
+        <Text style={styles.subtitle}>YOUR PERSONAL WARDROBE STYLIST</Text>
 
         <View style={styles.form}>
           <Text style={styles.label}>EMAIL</Text>
@@ -88,6 +88,10 @@ export default function LoginScreen() {
             cursorColor="#9CE41C"
           />
           {errors.password && <Text style={styles.errorText}>{errors.password}</Text>}
+
+          <TouchableOpacity onPress={() => router.push('/(auth)/forgot-password')} style={styles.forgotBtn}>
+            <Text style={styles.forgotText}>FORGOT PASSWORD?</Text>
+          </TouchableOpacity>
 
           {errors.general && (
             <View style={styles.generalError}>
@@ -139,4 +143,6 @@ const styles = StyleSheet.create({
   btnDisabled: { opacity: 0.5 },
   btnText: { color: '#0a0a0a', fontWeight: '800', fontSize: 13, letterSpacing: 2 },
   link: { color: '#666666', fontSize: 10, letterSpacing: 1.5, textAlign: 'center', marginTop: 24 },
+  forgotBtn: { alignSelf: 'flex-end', marginTop: 10 },
+  forgotText: { color: '#9CE41C', fontSize: 10, letterSpacing: 1.5 },
 });

@@ -17,9 +17,9 @@ const BODY_TYPES = [
   { value: 'hourglass',label: '沙漏型', desc: '腰線明顯' },
 ];
 const SKIN_TONES = [
-  { value: 'light',  label: '偏白' },
-  { value: 'medium', label: '中等' },
-  { value: 'dark',   label: '偏深' },
+  { value: 'light',  label: '偏白', color: '#F2D5B0' },
+  { value: 'medium', label: '中等', color: '#C8956C' },
+  { value: 'dark',   label: '偏深', color: '#8B5E3C' },
 ];
 type Selections = {
   gender: string;
@@ -60,7 +60,7 @@ export default function ProfileInfoScreen() {
     setSel(prev => ({ ...prev, [key]: value }));
   }
 
-  const canContinue = !!sel.gender && !!sel.height && !!sel.body_type;
+  const canContinue = !!sel.gender && !!sel.body_type;
 
   async function saveAndContinue() {
     if (!user || saving) return;
@@ -88,14 +88,12 @@ export default function ProfileInfoScreen() {
   return (
     <SafeAreaView style={styles.container}>
       <ScrollView contentContainerStyle={styles.inner} showsVerticalScrollIndicator={false}>
-        {fromProfile && (
-          <TouchableOpacity style={styles.backBtn} onPress={() => router.back()}>
-            <Text style={styles.backText}>← 返回</Text>
-          </TouchableOpacity>
-        )}
+        <TouchableOpacity style={styles.backBtn} onPress={() => router.back()}>
+          <Text style={styles.backText}>← 返回</Text>
+        </TouchableOpacity>
         <Text style={styles.label}>{fromProfile ? '編輯資料' : '告訴我們更多'}</Text>
         <Text style={styles.title}>你的{'\n'}穿搭輪廓</Text>
-        <Text style={styles.desc}>幫助 AI 生成更貼近你的穿搭建議</Text>
+        <Text style={styles.desc}>幫助我們生成更貼近你的穿搭建議</Text>
 
         {/* ── 性別偏好 ─────────────────────────────────── */}
         <SectionTitle text="穿搭偏好" required />
@@ -110,23 +108,6 @@ export default function ProfileInfoScreen() {
               <Text style={[styles.cardDesc, sel.gender === g.value && styles.cardDescActive]}>{g.desc}</Text>
             </TouchableOpacity>
           ))}
-        </View>
-
-        {/* ── 身高 ─────────────────────────────────────── */}
-        <SectionTitle text="身高" />
-        <View style={styles.heightRow}>
-          <TextInput
-            style={styles.heightInput}
-            value={sel.height}
-            onChangeText={v => set('height', v.replace(/[^0-9]/g, ''))}
-            placeholder="165"
-            placeholderTextColor="#444"
-            keyboardType="number-pad"
-            maxLength={3}
-            cursorColor="#9CE41C"
-            selectionColor="#9CE41C"
-          />
-          <Text style={styles.heightUnit}>cm</Text>
         </View>
 
         {/* ── 體型 ─────────────────────────────────────── */}
@@ -151,6 +132,23 @@ export default function ProfileInfoScreen() {
           <View style={styles.optionalLine} />
         </View>
 
+        {/* ── 身高 ─────────────────────────────────────── */}
+        <SectionTitle text="身高" />
+        <View style={styles.heightRow}>
+          <TextInput
+            style={styles.heightInput}
+            value={sel.height}
+            onChangeText={v => set('height', v.replace(/[^0-9]/g, ''))}
+            placeholder="165"
+            placeholderTextColor="#444"
+            keyboardType="number-pad"
+            maxLength={3}
+            cursorColor="#9CE41C"
+            selectionColor="#9CE41C"
+          />
+          <Text style={styles.heightUnit}>cm</Text>
+        </View>
+
         {/* ── 膚色 ─────────────────────────────────────── */}
         <SectionTitle text="膚色" />
         <View style={styles.smallChipRow}>
@@ -160,6 +158,7 @@ export default function ProfileInfoScreen() {
               style={[styles.smallChip, sel.skin_tone === s.value && styles.chipActive]}
               onPress={() => set('skin_tone', sel.skin_tone === s.value ? '' : s.value)}
             >
+              <View style={[styles.skinDot, { backgroundColor: s.color }]} />
               <Text style={[styles.smallChipLabel, sel.skin_tone === s.value && styles.chipLabelActive]}>{s.label}</Text>
             </TouchableOpacity>
           ))}
@@ -196,7 +195,7 @@ function SectionTitle({ text, required }: { text: string; required?: boolean }) 
 const sectionTitleStyles = StyleSheet.create({
   row: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 12 },
   text: { fontSize: 13, color: '#9CE41C', letterSpacing: 2, fontWeight: '800' },
-  req: { fontSize: 10, color: '#444', letterSpacing: 1 },
+  req: { fontSize: 11, color: '#0a0a0a', letterSpacing: 1, fontWeight: '700', backgroundColor: '#9CE41C', paddingHorizontal: 6, paddingVertical: 2 },
 });
 
 const styles = StyleSheet.create({
@@ -238,8 +237,9 @@ const styles = StyleSheet.create({
 
   // Small chips
   smallChipRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 10, marginBottom: 32 },
-  smallChip: { borderWidth: 1, borderColor: '#222', paddingHorizontal: 18, paddingVertical: 10 },
+  smallChip: { borderWidth: 1, borderColor: '#222', paddingHorizontal: 18, paddingVertical: 10, flexDirection: 'row', alignItems: 'center', gap: 8 },
   smallChipLabel: { fontSize: 13, color: '#aaa', letterSpacing: 0.5 },
+  skinDot: { width: 18, height: 18, borderRadius: 9 },
 
   // Optional divider
   optionalDivider: { flexDirection: 'row', alignItems: 'center', gap: 12, marginBottom: 32 },

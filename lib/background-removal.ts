@@ -30,6 +30,8 @@ export async function removeBackground(localUri: string): Promise<string> {
       body: formData,
     });
 
+    console.log('removeBackground status:', response.status, 'credits:', response.headers.get('x-credits-charged'), 'plan:', response.headers.get('x-photoroom-plan'));
+
     if (!response.ok) {
       const errText = await response.text();
       console.error('removeBackground API error:', response.status, errText);

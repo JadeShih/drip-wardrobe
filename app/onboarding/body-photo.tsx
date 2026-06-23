@@ -27,17 +27,7 @@ export default function BodyPhotoScreen() {
     }
     setRemovingBg(false);
 
-    const message = quotaExhausted
-      ? '去背額度已用完，將使用原始照片。確認使用這張照片？'
-      : '確認使用這張照片？';
-    Alert.alert(
-      '確認照片',
-      message,
-      [
-        { text: '重新選擇', style: 'cancel' },
-        { text: '確認使用', onPress: () => setPhoto(processed) },
-      ]
-    );
+    setPhoto(processed);
   }
 
   async function takePhoto() {
@@ -100,17 +90,15 @@ export default function BodyPhotoScreen() {
     }
     setUploading(false);
     if (fromProfile) router.back();
-    else router.replace('/(tabs)');
+    else router.replace('/onboarding/complete');
   }
 
   return (
     <SafeAreaView style={styles.container}>
       <ScrollView contentContainerStyle={styles.inner} showsVerticalScrollIndicator={false}>
-        {fromProfile && (
-          <TouchableOpacity style={styles.backBtn} onPress={() => router.back()}>
-            <Text style={styles.backText}>← 返回</Text>
-          </TouchableOpacity>
-        )}
+        <TouchableOpacity style={styles.backBtn} onPress={() => router.back()}>
+          <Text style={styles.backText}>← 返回</Text>
+        </TouchableOpacity>
         <View style={styles.top}>
           <Text style={styles.label}>{fromProfile ? '更換全身照' : '最後一步'}</Text>
           <Text style={styles.title}>上傳你的{'\n'}全身照</Text>

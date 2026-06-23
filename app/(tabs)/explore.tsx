@@ -74,7 +74,7 @@ export default function ExploreScreen() {
   ];
 
   const IMG_STEPS = [
-    'AI 分析穿搭元素...',
+    '分析穿搭元素...',
     '調整光線與色調...',
     '增加配飾細節...',
     '渲染最終畫面...',
@@ -253,18 +253,18 @@ export default function ExploreScreen() {
           <View style={styles.header}>
             <Text style={styles.logo}>DRIP</Text>
           </View>
-          <Text style={styles.landingTag}>AI LOOKBOOK</Text>
+          <Text style={styles.landingTag}>LOOKBOOK</Text>
           <Text style={styles.landingTitle}>{'探索無限\n穿搭靈感'}</Text>
           <Text style={styles.landingDesc}>
-            不受限於你的衣櫃——AI 造型師為你設計完整穿搭，每次都是全新的時尚提案。
+            不受限於你的衣櫃——專屬造型師為你設計完整穿搭，每次都是全新的時尚提案。
           </Text>
 
           <View style={styles.featureList}>
             {[
               '3 套完整穿搭概念',
-              '每套配有 AI 編輯圖',
+              '每套配有編輯風格圖',
               '依場合與氛圍量身設計',
-              'AI 生成通用模特兒展示，非個人照片',
+              '通用模特兒展示，非個人照片',
             ].map((f, i) => (
               <View key={i} style={[styles.featureRow, i === 3 && { marginTop: 4 }]}>
                 <View style={[styles.featureDot, i === 3 && { backgroundColor: '#444' }]} />
@@ -344,7 +344,7 @@ export default function ExploreScreen() {
           <Animated.View style={{ transform: [{ rotate }] }}>
             <IconSymbol name="sparkles" size={36} color="#9CE41C" />
           </Animated.View>
-          <Text style={styles.generatingText}>AI 造型師構思中</Text>
+          <Text style={styles.generatingText}>造型師構思中</Text>
           <Text style={styles.generatingSub}>{occasion} × {vibe}</Text>
           <View style={styles.genStepBox}>
             <View style={styles.genStepDot} />
@@ -377,7 +377,7 @@ export default function ExploreScreen() {
           </TouchableOpacity>
         </View>
 
-        <Text style={styles.resultTag}>AI LOOKBOOK</Text>
+        <Text style={styles.resultTag}>LOOKBOOK</Text>
         <Text style={styles.resultTitle}>{occasion} × {vibe}</Text>
 
         {outfits.map((outfit, idx) => (

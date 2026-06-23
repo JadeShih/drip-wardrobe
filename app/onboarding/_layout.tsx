@@ -8,6 +8,7 @@ export default function OnboardingLayout() {
       <Stack.Screen name="style-result" />
       <Stack.Screen name="profile-info" />
       <Stack.Screen name="body-photo" />
+      <Stack.Screen name="complete" />
     </Stack>
   );
 }

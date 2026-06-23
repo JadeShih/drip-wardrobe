@@ -98,29 +98,8 @@ export default function WelcomeScreen() {
     <SafeAreaView style={styles.container}>
       <View style={styles.inner}>
 
-        {/* ── DRIP animated letters ── */}
+        {/* ── Green underline only ── */}
         <View style={styles.logoArea}>
-          <View style={styles.lettersRow}>
-            {LETTERS.map((letter, i) => (
-              <Animated.Text
-                key={letter}
-                style={[
-                  styles.letter,
-                  {
-                    opacity: letterAnims[i].opacity,
-                    transform: [
-                      { translateY: letterAnims[i].translateY },
-                      { scale: letterAnims[i].scale },
-                    ],
-                  },
-                ]}
-              >
-                {letter}
-              </Animated.Text>
-            ))}
-          </View>
-
-          {/* Green underline */}
           <View style={styles.lineContainer}>
             <Animated.View
               style={[

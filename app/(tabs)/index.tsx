@@ -4,7 +4,7 @@ import {
   Image, Dimensions, ActivityIndicator, ScrollView, Animated, Easing,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { router } from 'expo-router';
+import { router, useNavigation } from 'expo-router';
 import { useFocusEffect } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as FileSystem from 'expo-file-system/legacy';
@@ -14,6 +14,9 @@ import { getSignedUrl } from '@/lib/storage';
 import { removeBackground } from '@/lib/background-removal';
 import { virtualTryOnReplicate } from '@/lib/virtual-tryon-replicate';
 import { IconSymbol } from '@/components/ui/icon-symbol';
+import Svg, { Path } from 'react-native-svg';
+
+const FIGURE_PATH = "M183.88,644.24l-7.44,86.39c-2.71,31.47-4.67,61.97-5.25,93.55-.3,16.24-2.31,31.34-6.55,46.89-3.56,13.07-4.67,26.13-3.32,39.67l3.01,30.12c2.22,22.26,1.86,43.5-1.83,65.67-5.74,34.55-8.89,68.65-9.67,103.65-.19,8.6.61,16.35,2.44,24.52,1.2,5.35,1.57,10.94.52,16.34-1.37,7.06-1.51,13.97-.56,21.11,1.06,7.99-.3,14.74-2.12,22.39-1.91,8.04,5.33,26.31-8.54,34.46-5.76,3.39-12.34,1.97-18.69,1.79-16.37-.47-44.37-4.31-39.57-20.13,2.83-9.33,14.58-17.2,22.89-41.59,1.31-3.84,3.53-8.34,3.57-12.32l.22-21.9c.1-9.87-.41-19.46-2.38-29.33l-19.84-99.29c-6.79-34-8.05-67.37-3.74-101.7l3.11-38.39-1.95-48.05c-1.86-19.14-5.78-37.1-9.34-56.06-5.72-30.42-11.15-59.88-15.2-90.56-7.26-55.12-.54-102.96,15.17-155.84l13.54-45.58c12.18-41,.72-81.15-7.03-121.72l-10.65,66.61c-1.59,9.95-2.78,19.3-3.3,29.42-.27,18.21-3.16,35.31-8.42,52.67l-16.73,55.2c-4.08,13.47-7.31,26.69-9.6,40.49-1.46,8.78.51,16.36,4.47,23.85,5.09,9.65,7.03,20.08,6.23,30.94l.32,18.25c.16,9.2,2.27,25.03-5.62,22.43s-6.87-12.14-7.77-19.81l-1.5-12.85c-.08-.67-1.43-1.92-1.96-2.16-3.46-1.52-8.09,18.06.53,32.28,8.06,13.29,22.34,19.54,13.59,28.73-12.37-4.4-22.17-12.15-31.17-21.24-5.26-11.41-9.18-22.61-12.75-34.75l4.54-39.27,1.94-21.79c1.69-18.95,1.58-37.35,1.18-56.44l-1.06-50.12c-.44-20.9,2.89-40.83,9.54-60.48,3.8-11.22,5.67-22.08,6.41-33.94l5.18-83.13-.67-34.13c-.31-15.67,2.52-30.78,8.72-45.09,8.32-19.21,24-26.75,43.9-30.86,19.52-4.03,37.98-10.8,54.53-21.9,7.38-4.95,12.58-12.11,13.46-21.31.64-6.67,2.17-15.54-.1-21.7-2.91-7.87-7.04-14.62-8.6-23.06l-4.16-3.19c-6.64-11.57-13.51-32.1-3.22-38.44-3.13-30.87,6.62-61.59,37.95-70.25s63.39,7.45,69.83,40.78c1.85,9.59,1.85,19.63,1.46,29.51,8.83,5.94,4.09,21.88-.45,33.39-1.25,3.18-4.14,5.99-6.68,7.8l-9.04,23.78c-2.5,6.58-.8,16.05.2,22.84,1.29,8.79,6.49,15.39,13.61,20.15,16.11,10.78,34.15,17.46,53.19,21.39,21.21,4.38,37.07,11.94,45.57,32.85,5.77,14.19,8.22,29.05,7.93,44.55l-.65,34.68,5.38,81.87c.64,9.76,1.56,19.3,4.71,28.37,7.63,22.02,11.38,43.91,10.89,67.36l-1.17,56.45,1.25,47.36,2.2,24.09,4.39,37.96-12.47,34.25c-8.69,9.27-19.17,17.25-31.49,21.53-8.78-8.96,6.69-16.33,14.07-28.98,5.82-9.98,5.93-28.25.86-31.92-.76-.55-2.95,1.62-3.04,2.58l-1.31,14.27c-.74,8.03-1.63,17.44-8.34,18.06-7.67.71-5-14.12-4.88-24.45l.18-16.4c.12-11.07,1.17-21.73,6.49-31.53,3.93-7.25,5.74-14.74,4.36-23.24-2.37-14.58-5.9-28.49-10.23-42.69l-15.95-52.3c-5.53-18.14-8.2-36.19-8.78-55.16l-2.36-23.09-11.38-70.4c-8.34,40.23-18.92,80.03-6.97,120.64l13.67,46.45c6.34,21.53,11.31,42.52,14.52,64.82,9.45,65.63-3.25,113.69-13.95,176.47l-9.68,56.79c-2.09,18.93-2.63,37.37-2.37,56.32l3.1,34.79c2.9,32.58,3.43,64.14-3.01,96.3l-18.5,92.39c-2.4,11.97-4.33,23.21-4.88,35.37l.77,18.98c-.92,7.67.28,13.21,2.92,20.04,4.54,11.72,9.64,22.58,17.87,32.39,2.49,2.97,4.7,6.95,5.59,10.59,3.7,15.18-23.91,19.06-39.77,19.45-6.53.16-13.41,1.52-19.21-2.29-13.15-8.64-5.85-26.43-8.06-34.77-2.04-7.74-3.1-14.56-1.98-22.6,2.17-15.51-2.9-23.44-.33-34.89,2.37-10.58,3.02-20.58,2.73-31.5-.89-34.32-4.38-67.62-10.07-101.46-3.59-21.36-3.43-41.99-1.19-63.39l3.06-29.3c1.38-13.21,0-26.15-3.45-38.98-4.25-15.81-6.34-31-6.63-47.51-.61-34.05-3.06-66.98-5.98-101.03l-6.85-79.68c-.1-1.15-1.81-2.74-2.77-2.84-1.3-.14-3.38,1.48-3.56,3.62Z";
 
 /** Download a remote URL to a local temp file and return its local URI. */
 async function downloadToTemp(url: string): Promise<string> {
@@ -104,13 +107,20 @@ const VIBES: { label: string; en: string; icon: string }[] = [
   { label: '休閒', en: 'CASUAL',   icon: 'sun.max'      },
 ];
 
+const SEASONS: { label: string; en: string; icon: string }[] = [
+  { label: '春', en: 'SPRING', icon: 'leaf'      },
+  { label: '夏', en: 'SUMMER', icon: 'sun.max'   },
+  { label: '秋', en: 'AUTUMN', icon: 'wind'      },
+  { label: '冬', en: 'WINTER', icon: 'snowflake' },
+];
+
 const GENERATING_STEPS = [
   '分析你的衣櫃中...',
   '搭配最佳色系與版型...',
   '渲染專屬穿搭圖...',
 ];
 
-type Step = 'map' | 'occasion' | 'vibe' | 'generating' | 'result';
+type Step = 'map' | 'occasion' | 'vibe' | 'season' | 'generating' | 'result';
 type WardrobeItem = { name: string; brand: string | null; photo_url: string | null };
 type WardrobeMap = Record<string, WardrobeItem>;
 type GridItem = { id: string; name: string; brand: string | null; photo_url: string | null; category: string };
@@ -218,6 +228,7 @@ export default function HomeScreen() {
   const [step, setStep] = useState<Step>('map');
   const [occasion, setOccasion] = useState('');
   const [vibe, setVibe] = useState('');
+  const [season, setSeason] = useState('');
   const [outfitResult, setOutfitResult] = useState<OutfitResult | null>(null);
   const [imageGenerating, setImageGenerating] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -273,6 +284,30 @@ export default function HomeScreen() {
   }, [imageGenerating]);
 
   const firstName = user?.user_metadata?.full_name?.split(' ')[0] ?? '';
+
+  // 在結果頁按主頁 tab 時返回主頁 map view
+  const navigation = useNavigation();
+  const stepRef = useRef(step);
+  useEffect(() => { stepRef.current = step; }, [step]);
+
+  const slideAnim = useRef(new Animated.Value(0)).current;
+  function goBackToMap() {
+    Animated.timing(slideAnim, {
+      toValue: W,
+      duration: 280,
+      easing: Easing.out(Easing.quad),
+      useNativeDriver: true,
+    }).start(() => {
+      reset();
+    });
+  }
+
+  useEffect(() => {
+    const unsub = navigation.addListener('tabPress' as any, () => {
+      if (stepRef.current !== 'map') goBackToMap();
+    });
+    return unsub;
+  }, [navigation]);
 
   useFocusEffect(useCallback(() => {
     if (!user) return;
@@ -364,7 +399,7 @@ export default function HomeScreen() {
         .join('\n');
 
       const availableCategories = Object.keys(wardrobeMap);
-      const prompt = `你是一位時尚造型師。用戶的衣櫃有以下單品（格式：分類：單品名稱）：\n${wardrobeLines}\n\n場合：${occasion}\n氛圍：${vibe}\n\n請從衣櫃中選出最適合的分類組合，並建議 1-2 件衣櫃以外可以添購的單品來提升整體造型。\n\n注意：selected_categories 只能從以下分類名稱中選擇，不可以填入單品名稱：${availableCategories.join('、')}\n\n只回傳 JSON，不要有其他文字或 markdown：\n{\n  "title": "穿搭標題（10字內）",\n  "selected_categories": ${JSON.stringify(availableCategories.slice(0, 2))},\n  "notes": "穿搭建議（50字內）",\n  "suggestions": [\n    { "category": "分類名稱", "description": "單品描述（10字內）", "reason": "添購原因（15字內）" }\n  ]\n}`;
+      const prompt = `你是一位時尚造型師。用戶的衣櫃有以下單品（格式：分類：單品名稱）：\n${wardrobeLines}\n\n場合：${occasion}\n氛圍：${vibe}\n季節：${season}（請根據季節考慮衣物厚薄與是否適合穿外套）\n\n請從衣櫃中選出最適合的分類組合，並建議 1-2 件衣櫃以外可以添購的單品來提升整體造型。\n\n注意：selected_categories 只能從以下分類名稱中選擇，不可以填入單品名稱：${availableCategories.join('、')}\n\n只回傳 JSON，不要有其他文字或 markdown：\n{\n  "title": "穿搭標題（10字內）",\n  "selected_categories": ${JSON.stringify(availableCategories.slice(0, 2))},\n  "notes": "穿搭建議（50字內）",\n  "suggestions": [\n    { "category": "分類名稱", "description": "單品描述（10字內）", "reason": "添購原因（15字內）" }\n  ]\n}`;
 
       const apiKey = process.env.EXPO_PUBLIC_ANTHROPIC_API_KEY;
       if (!apiKey) throw new Error('Anthropic API key not configured');
@@ -534,7 +569,7 @@ export default function HomeScreen() {
   }
 
   function reset() {
-    setOccasion(''); setVibe(''); setOutfitResult(null);
+    setOccasion(''); setVibe(''); setSeason(''); setOutfitResult(null);
     setImageGenerating(false);
     setStep('map');
   }
@@ -646,30 +681,35 @@ export default function HomeScreen() {
                   onError={(e) => console.error('body photo load error', e.nativeEvent.error)}
                 />
               ) : (
-                <View style={styles.silhouette}>
-                  <IconSymbol name="person.fill" size={FIG_W - 10} color="#3d3d3d" />
-                </View>
+                <Svg
+                  width={FIG_W}
+                  height={FIG_H}
+                  viewBox="0 0 374.17 1232.25"
+                  preserveAspectRatio="xMidYMid meet"
+                >
+                  <Path
+                    d={FIGURE_PATH}
+                    fill="none"
+                    stroke="rgba(255,255,255,0.25)"
+                    strokeWidth={4}
+                    strokeMiterlimit={10}
+                  />
+                </Svg>
               )}
             </View>
 
-            {/* Labels — 有套用穿搭時只顯示有搭配的類別，否則顯示衣櫃已有的 */}
-            {LABEL_DEFS.map(({ cat, side, topFrac }) => {
-              const appliedItem = appliedOutfit?.selected.find(s => s.category === cat)?.item;
-              const wardrobeItem = wardrobeMap[cat];
-
-              // 有套用穿搭：只顯示該穿搭選到的類別
-              if (appliedOutfit && !appliedItem) return null;
-              // 無套用穿搭：只顯示衣櫃裡有的類別
-              if (!appliedOutfit && !wardrobeItem) return null;
-
+            {/* Labels — 只在有套用穿搭時顯示 */}
+            {appliedOutfit && LABEL_DEFS.map(({ cat, side, topFrac }) => {
+              const appliedItem = appliedOutfit.selected.find(s => s.category === cat)?.item;
+              if (!appliedItem) return null;
               return (
                 <LabelChip
                   key={cat}
                   cat={cat}
-                  item={appliedItem ?? wardrobeItem}
+                  item={appliedItem}
                   side={side}
                   top={FIG_TOP + topFrac * FIG_H}
-                  highlighted={!!appliedItem}
+                  highlighted
                 />
               );
             })}
@@ -687,7 +727,13 @@ export default function HomeScreen() {
               <View style={styles.appliedRight}>
                 <Text style={styles.appliedView}>查看 →</Text>
                 <TouchableOpacity
-                  onPress={(e) => { e.stopPropagation(); setAppliedOutfit(null); AsyncStorage.removeItem(APPLIED_OUTFIT_KEY); }}
+                  onPress={(e) => {
+                    e.stopPropagation();
+                    Alert.alert('清除穿搭', '確定要清除目前的穿搭嗎？', [
+                      { text: '取消', style: 'cancel' },
+                      { text: '清除', style: 'destructive', onPress: () => { setAppliedOutfit(null); AsyncStorage.removeItem(APPLIED_OUTFIT_KEY); } },
+                    ]);
+                  }}
                   hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
                 >
                   <Text style={styles.appliedClear}>清除</Text>
@@ -705,9 +751,29 @@ export default function HomeScreen() {
               <Text style={styles.primaryBtnText}>新增第一件衣物 →</Text>
             </TouchableOpacity>
           ) : (
-            <TouchableOpacity style={styles.primaryBtn} onPress={() => setStep('occasion')}>
-              <Text style={styles.primaryBtnText}>{appliedOutfit ? '重新生成穿搭 →' : '生成今日穿搭 →'}</Text>
-            </TouchableOpacity>
+            <>
+              {/* Nudge: missing top or bottom */}
+              {!wardrobeMap['上衣'] || !wardrobeMap['下著'] ? (
+                <TouchableOpacity
+                  style={styles.completionNudge}
+                  onPress={() => router.push('/(tabs)/add')}
+                  activeOpacity={0.7}
+                >
+                  <View style={styles.nudgeDot} />
+                  <Text style={styles.completionNudgeText}>
+                    {!wardrobeMap['上衣'] && !wardrobeMap['下著']
+                      ? '建議新增上衣和下著，穿搭建議更完整'
+                      : !wardrobeMap['上衣']
+                      ? '再新增一件上衣，搭配效果更好'
+                      : '再新增一件下著，搭配效果更好'}
+                  </Text>
+                  <Text style={styles.nudgeArrow}>+</Text>
+                </TouchableOpacity>
+              ) : null}
+              <TouchableOpacity style={styles.primaryBtn} onPress={() => { slideAnim.setValue(0); setStep('occasion'); }}>
+                <Text style={styles.primaryBtnText}>{appliedOutfit ? '重新生成穿搭 →' : '生成今日穿搭 →'}</Text>
+              </TouchableOpacity>
+            </>
           )}
 
           {/* No body photo nudge */}
@@ -719,22 +785,17 @@ export default function HomeScreen() {
             </TouchableOpacity>
           )}
 
-          {/* ITEM grid — 有套用穿搭時只顯示該套單品，否則顯示全部 */}
-          {(appliedOutfit ? appliedOutfit.selected.length > 0 : allItems.length > 0) && (
+          {/* ITEM grid — 只在有套用穿搭時顯示 */}
+          {appliedOutfit && appliedOutfit.selected.length > 0 && (
             <View style={styles.itemsSection}>
-              <Text style={styles.itemsSectionTitle}>
-                {appliedOutfit ? '本次穿搭單品' : 'ITEM'}
-              </Text>
+              <Text style={styles.itemsSectionTitle}>本次穿搭單品</Text>
               <View style={styles.itemsGrid}>
-                {(appliedOutfit
-                  ? appliedOutfit.selected.map(s => ({
-                      id: s.category,
-                      name: s.item.name,
-                      brand: s.item.brand,
-                      photo_url: s.item.photo_url,
-                    }))
-                  : allItems
-                ).map(item => (
+                {appliedOutfit.selected.map(s => ({
+                  id: s.category,
+                  name: s.item.name,
+                  brand: s.item.brand,
+                  photo_url: s.item.photo_url,
+                })).map(item => (
                   <View key={item.id} style={styles.itemCard}>
                     <Text style={styles.itemCardName} numberOfLines={1}>{item.name}</Text>
                     {item.brand
@@ -759,9 +820,12 @@ export default function HomeScreen() {
     );
   }
 
+  const slideStyle = { flex: 1, transform: [{ translateX: slideAnim }], backgroundColor: '#0a0a0a' };
+
   // ── Occasion ─────────────────────────────────────────────────────────────
   if (step === 'occasion') {
     return (
+      <Animated.View style={slideStyle}>
       <SafeAreaView style={styles.container}>
         <View style={styles.genHeader}>
           <TouchableOpacity onPress={() => setStep('map')}>
@@ -812,12 +876,14 @@ export default function HomeScreen() {
           </TouchableOpacity>
         </View>
       </SafeAreaView>
+      </Animated.View>
     );
   }
 
   // ── Vibe ─────────────────────────────────────────────────────────────────
   if (step === 'vibe') {
     return (
+      <Animated.View style={slideStyle}>
       <SafeAreaView style={styles.container}>
         <View style={styles.genHeader}>
           <TouchableOpacity onPress={() => setStep('occasion')}>
@@ -861,19 +927,71 @@ export default function HomeScreen() {
         <View style={styles.genFooter}>
           <TouchableOpacity
             style={[styles.primaryBtn, !vibe && styles.btnDisabled]}
-            onPress={generate}
+            onPress={() => vibe && setStep('season')}
             disabled={!vibe}
+          >
+            <Text style={styles.primaryBtnText}>下一步 →</Text>
+          </TouchableOpacity>
+        </View>
+      </SafeAreaView>
+      </Animated.View>
+    );
+  }
+
+  // ── Season ───────────────────────────────────────────────────────────────
+  if (step === 'season') {
+    return (
+      <Animated.View style={slideStyle}>
+      <SafeAreaView style={styles.container}>
+        <View style={styles.genHeader}>
+          <TouchableOpacity onPress={() => setStep('vibe')}>
+            <Text style={styles.back}>← 返回</Text>
+          </TouchableOpacity>
+        </View>
+        <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.genInner}>
+          <Text style={styles.genTitle}>{'PICK YOUR\nSEASON'}</Text>
+          <Text style={styles.genSubtitle}>選擇現在的季節</Text>
+
+          {SEASONS.map((s, i) => {
+            const selected = season === s.label;
+            return (
+              <TouchableOpacity
+                key={s.label}
+                style={[styles.occasionRow, i === SEASONS.length - 1 && { borderBottomWidth: 0 }]}
+                onPress={() => setSeason(s.label)}
+                activeOpacity={0.6}
+              >
+                <IconSymbol name={s.icon as any} size={22} color={selected ? '#fff' : '#555'} />
+                <View style={styles.occasionText}>
+                  <Text style={[styles.occasionLabel, selected && styles.occasionLabelSelected]}>{s.label}</Text>
+                  <Text style={[styles.occasionEn, selected && styles.occasionEnSelected]}>{s.en}</Text>
+                </View>
+                <View style={[styles.radio, selected && styles.radioSelected]}>
+                  {selected && <IconSymbol name="checkmark" size={11} color="#0a0a0a" />}
+                </View>
+              </TouchableOpacity>
+            );
+          })}
+        </ScrollView>
+
+        <View style={styles.genFooter}>
+          <TouchableOpacity
+            style={[styles.primaryBtn, !season && styles.btnDisabled]}
+            onPress={generate}
+            disabled={!season}
           >
             <Text style={styles.primaryBtnText}>生成穿搭 →</Text>
           </TouchableOpacity>
         </View>
       </SafeAreaView>
+      </Animated.View>
     );
   }
 
   // ── Generating ───────────────────────────────────────────────────────────
   if (step === 'generating') {
     return (
+      <Animated.View style={slideStyle}>
       <SafeAreaView style={styles.container}>
         <View style={styles.generatingState}>
           <ActivityIndicator color="#9CE41C" size="large" />
@@ -881,15 +999,17 @@ export default function HomeScreen() {
           <Text style={styles.generatingSub}>{`${occasion} × ${vibe}`}</Text>
         </View>
       </SafeAreaView>
+      </Animated.View>
     );
   }
 
   // ── Result ───────────────────────────────────────────────────────────────
   return (
+    <Animated.View style={slideStyle}>
     <SafeAreaView style={styles.container}>
       <ScrollView contentContainerStyle={styles.inner} showsVerticalScrollIndicator={false}>
         <View style={styles.header}>
-          <TouchableOpacity onPress={reset}>
+          <TouchableOpacity onPress={goBackToMap}>
             <Text style={styles.back}>← 返回</Text>
           </TouchableOpacity>
         </View>
@@ -1037,6 +1157,7 @@ export default function HomeScreen() {
       </Animated.View>
 
     </SafeAreaView>
+    </Animated.View>
   );
 }
 
@@ -1057,10 +1178,6 @@ const styles = StyleSheet.create({
   figureContainer: { position: 'relative', marginHorizontal: -24, overflow: 'hidden' },
   figureWrap: { position: 'absolute' },
   bodyPhoto: { width: '100%', height: '100%', resizeMode: 'cover' },
-  silhouette: {
-    flex: 1, alignItems: 'center', justifyContent: 'center',
-    backgroundColor: '#141414',
-  },
 
   // Labels
   labelAbsolute: { position: 'absolute' },
@@ -1128,6 +1245,14 @@ const styles = StyleSheet.create({
   nudgeDot: { width: 6, height: 6, backgroundColor: '#9CE41C' },
   nudgeText: { flex: 1, fontSize: 14, color: '#666666' },
   nudgeArrow: { fontSize: 14, color: '#555555' },
+
+  completionNudge: {
+    flexDirection: 'row', alignItems: 'center', gap: 10,
+    borderWidth: 1, borderColor: '#2a2a2a',
+    backgroundColor: '#111',
+    padding: 14, marginBottom: 12,
+  },
+  completionNudgeText: { flex: 1, fontSize: 13, color: '#888888', lineHeight: 18 },
 
   // Step screens
   stepLabel: { fontSize: 14, color: '#666666', letterSpacing: 2, marginBottom: 8 },

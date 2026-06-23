@@ -226,7 +226,7 @@ export default function ProfileScreen() {
               <Text style={styles.rowSubText}>
                 {profile?.gender && profile?.body_type
                   ? '性別、身高、體型...'
-                  : '尚未設定 — 影響 AI 生成效果'}
+                  : '尚未設定 — 影響穿搭生成效果'}
               </Text>
             </View>
             <Text style={styles.rowArrow}>→</Text>
