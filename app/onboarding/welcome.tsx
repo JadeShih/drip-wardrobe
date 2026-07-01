@@ -79,20 +79,14 @@ export default function WelcomeScreen() {
     ]).start();
   }, []);
 
-  async function trackAndContinue() {
-    await supabase.from('analytics_events').insert({
-      user_id: user?.id,
-      event: 'onboarding_started',
-    });
+  function trackAndContinue() {
+    supabase.from('analytics_events').insert({ user_id: user?.id, event: 'onboarding_started' });
     router.push('/onboarding/style-quiz');
   }
 
-  async function trackAndSkip() {
-    await supabase.from('analytics_events').insert({
-      user_id: user?.id,
-      event: 'onboarding_skipped',
-    });
-    router.replace('/(tabs)');
+  function trackAndSkip() {
+    supabase.from('analytics_events').insert({ user_id: user?.id, event: 'onboarding_skipped_to_profile' });
+    router.push('/onboarding/profile-info');
   }
 
   return (

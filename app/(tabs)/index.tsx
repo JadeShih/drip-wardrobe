@@ -17,6 +17,26 @@ import { virtualTryOnReplicate } from '@/lib/virtual-tryon-replicate';
 import { IconSymbol } from '@/components/ui/icon-symbol';
 import Svg, { Path } from 'react-native-svg';
 
+const BODY_MODELS: Record<string, Record<string, any>> = {
+  female: {
+    straight:  require('@/assets/modals/female_straight.png'),
+    pear:      require('@/assets/modals/female_pear.png'),
+    apple:     require('@/assets/modals/female_apple.png'),
+    hourglass: require('@/assets/modals/female_hourglass.png'),
+  },
+  male: {
+    straight:  require('@/assets/modals/male_straight.png'),
+    pear:      require('@/assets/modals/male_pear.png'),
+    apple:     require('@/assets/modals/male_apple.png'),
+    hourglass: require('@/assets/modals/male_hourglass.png'),
+  },
+};
+function getBodyModel(sex: string | null, bodyType: string | null) {
+  const s = (sex === 'male' ? 'male' : 'female');
+  const t = bodyType ?? 'straight';
+  return BODY_MODELS[s]?.[t] ?? BODY_MODELS.female.straight;
+}
+
 const FIGURE_PATH = "M183.88,644.24l-7.44,86.39c-2.71,31.47-4.67,61.97-5.25,93.55-.3,16.24-2.31,31.34-6.55,46.89-3.56,13.07-4.67,26.13-3.32,39.67l3.01,30.12c2.22,22.26,1.86,43.5-1.83,65.67-5.74,34.55-8.89,68.65-9.67,103.65-.19,8.6.61,16.35,2.44,24.52,1.2,5.35,1.57,10.94.52,16.34-1.37,7.06-1.51,13.97-.56,21.11,1.06,7.99-.3,14.74-2.12,22.39-1.91,8.04,5.33,26.31-8.54,34.46-5.76,3.39-12.34,1.97-18.69,1.79-16.37-.47-44.37-4.31-39.57-20.13,2.83-9.33,14.58-17.2,22.89-41.59,1.31-3.84,3.53-8.34,3.57-12.32l.22-21.9c.1-9.87-.41-19.46-2.38-29.33l-19.84-99.29c-6.79-34-8.05-67.37-3.74-101.7l3.11-38.39-1.95-48.05c-1.86-19.14-5.78-37.1-9.34-56.06-5.72-30.42-11.15-59.88-15.2-90.56-7.26-55.12-.54-102.96,15.17-155.84l13.54-45.58c12.18-41,.72-81.15-7.03-121.72l-10.65,66.61c-1.59,9.95-2.78,19.3-3.3,29.42-.27,18.21-3.16,35.31-8.42,52.67l-16.73,55.2c-4.08,13.47-7.31,26.69-9.6,40.49-1.46,8.78.51,16.36,4.47,23.85,5.09,9.65,7.03,20.08,6.23,30.94l.32,18.25c.16,9.2,2.27,25.03-5.62,22.43s-6.87-12.14-7.77-19.81l-1.5-12.85c-.08-.67-1.43-1.92-1.96-2.16-3.46-1.52-8.09,18.06.53,32.28,8.06,13.29,22.34,19.54,13.59,28.73-12.37-4.4-22.17-12.15-31.17-21.24-5.26-11.41-9.18-22.61-12.75-34.75l4.54-39.27,1.94-21.79c1.69-18.95,1.58-37.35,1.18-56.44l-1.06-50.12c-.44-20.9,2.89-40.83,9.54-60.48,3.8-11.22,5.67-22.08,6.41-33.94l5.18-83.13-.67-34.13c-.31-15.67,2.52-30.78,8.72-45.09,8.32-19.21,24-26.75,43.9-30.86,19.52-4.03,37.98-10.8,54.53-21.9,7.38-4.95,12.58-12.11,13.46-21.31.64-6.67,2.17-15.54-.1-21.7-2.91-7.87-7.04-14.62-8.6-23.06l-4.16-3.19c-6.64-11.57-13.51-32.1-3.22-38.44-3.13-30.87,6.62-61.59,37.95-70.25s63.39,7.45,69.83,40.78c1.85,9.59,1.85,19.63,1.46,29.51,8.83,5.94,4.09,21.88-.45,33.39-1.25,3.18-4.14,5.99-6.68,7.8l-9.04,23.78c-2.5,6.58-.8,16.05.2,22.84,1.29,8.79,6.49,15.39,13.61,20.15,16.11,10.78,34.15,17.46,53.19,21.39,21.21,4.38,37.07,11.94,45.57,32.85,5.77,14.19,8.22,29.05,7.93,44.55l-.65,34.68,5.38,81.87c.64,9.76,1.56,19.3,4.71,28.37,7.63,22.02,11.38,43.91,10.89,67.36l-1.17,56.45,1.25,47.36,2.2,24.09,4.39,37.96-12.47,34.25c-8.69,9.27-19.17,17.25-31.49,21.53-8.78-8.96,6.69-16.33,14.07-28.98,5.82-9.98,5.93-28.25.86-31.92-.76-.55-2.95,1.62-3.04,2.58l-1.31,14.27c-.74,8.03-1.63,17.44-8.34,18.06-7.67.71-5-14.12-4.88-24.45l.18-16.4c.12-11.07,1.17-21.73,6.49-31.53,3.93-7.25,5.74-14.74,4.36-23.24-2.37-14.58-5.9-28.49-10.23-42.69l-15.95-52.3c-5.53-18.14-8.2-36.19-8.78-55.16l-2.36-23.09-11.38-70.4c-8.34,40.23-18.92,80.03-6.97,120.64l13.67,46.45c6.34,21.53,11.31,42.52,14.52,64.82,9.45,65.63-3.25,113.69-13.95,176.47l-9.68,56.79c-2.09,18.93-2.63,37.37-2.37,56.32l3.1,34.79c2.9,32.58,3.43,64.14-3.01,96.3l-18.5,92.39c-2.4,11.97-4.33,23.21-4.88,35.37l.77,18.98c-.92,7.67.28,13.21,2.92,20.04,4.54,11.72,9.64,22.58,17.87,32.39,2.49,2.97,4.7,6.95,5.59,10.59,3.7,15.18-23.91,19.06-39.77,19.45-6.53.16-13.41,1.52-19.21-2.29-13.15-8.64-5.85-26.43-8.06-34.77-2.04-7.74-3.1-14.56-1.98-22.6,2.17-15.51-2.9-23.44-.33-34.89,2.37-10.58,3.02-20.58,2.73-31.5-.89-34.32-4.38-67.62-10.07-101.46-3.59-21.36-3.43-41.99-1.19-63.39l3.06-29.3c1.38-13.21,0-26.15-3.45-38.98-4.25-15.81-6.34-31-6.63-47.51-.61-34.05-3.06-66.98-5.98-101.03l-6.85-79.68c-.1-1.15-1.81-2.74-2.77-2.84-1.3-.14-3.38,1.48-3.56,3.62Z";
 
 /** Download a remote URL to a local temp file and return its local URI. */
@@ -222,6 +242,8 @@ function LabelChip({
 export default function HomeScreen() {
   const { user } = useAuth();
   const [bodyPhotoUrl, setBodyPhotoUrl] = useState<string | null>(null);
+  const [userSex, setUserSex] = useState<string | null>(null);
+  const [userBodyType, setUserBodyType] = useState<string | null>(null);
   const [wardrobeMap, setWardrobeMap] = useState<WardrobeMap>({});
   const [allItems, setAllItems] = useState<GridItem[]>([]);
   const [totalItems, setTotalItems] = useState(0);
@@ -315,9 +337,11 @@ export default function HomeScreen() {
     (async () => {
       const { data: userData } = await supabase
         .from('users')
-        .select('body_photo_url')
+        .select('body_photo_url, sex, body_type')
         .eq('id', user.id)
         .single();
+      setUserSex(userData?.sex ?? null);
+      setUserBodyType(userData?.body_type ?? null);
       const rawBodyUrl = userData?.body_photo_url ?? null;
       const signedBodyUrl = await getSignedUrl(rawBodyUrl);
       console.log('body photo signed url:', signedBodyUrl);
@@ -653,70 +677,46 @@ export default function HomeScreen() {
 
   // ── Body map (default) ───────────────────────────────────────────────────
   if (step === 'map') {
-    const FIG_CONTAINER_H = FIG_H + 80;
-    const FIG_TOP = 30;
+    const bodyModel = getBodyModel(userSex, userBodyType);
 
     return (
       <SafeAreaView style={styles.container}>
-        <ScrollView contentContainerStyle={styles.inner} showsVerticalScrollIndicator={false}>
-          {/* Header */}
-          <View style={styles.header}>
-            <Text style={styles.logo}>DRIP</Text>
-            {firstName ? <Text style={styles.greeting}>嗨，{firstName}</Text> : null}
-          </View>
+        {/* Header */}
+        <View style={[styles.header, { paddingHorizontal: 24 }]}>
+          <Text style={styles.logo}>DRIP</Text>
+          {firstName ? <Text style={styles.greeting}>嗨，{firstName}</Text> : null}
+        </View>
 
-          {/* Figure container */}
-          <View style={{ height: FIG_CONTAINER_H, position: 'relative' }}>
-            <GridBg height={FIG_CONTAINER_H} />
+        {/* Figure — fills all available flex space */}
+        <View style={styles.figFlex}>
+          <GridBg height={500} />
 
-            {/* Body figure */}
-            <View style={[styles.figureWrap, {
-              left: FIG_LEFT, width: FIG_W, height: FIG_H, top: FIG_TOP,
-            }]}>
-              {appliedOutfit?.tryOnImageUrl ? (
-                <Image source={{ uri: appliedOutfit.tryOnImageUrl }} style={styles.bodyPhoto} />
-              ) : bodyPhotoUrl ? (
-                <Image
-                  source={{ uri: bodyPhotoUrl }}
-                  style={styles.bodyPhoto}
-                  onError={(e) => console.error('body photo load error', e.nativeEvent.error)}
-                />
-              ) : (
-                <Svg
-                  width={FIG_W}
-                  height={FIG_H}
-                  viewBox="0 0 374.17 1232.25"
-                  preserveAspectRatio="xMidYMid meet"
-                >
-                  <Path
-                    d={FIGURE_PATH}
-                    fill="none"
-                    stroke="rgba(255,255,255,0.25)"
-                    strokeWidth={4}
-                    strokeMiterlimit={10}
-                  />
-                </Svg>
-              )}
-            </View>
+          {appliedOutfit?.tryOnImageUrl ? (
+            <Image source={{ uri: appliedOutfit.tryOnImageUrl }} style={styles.figModel} resizeMode="contain" />
+          ) : (
+            <Image source={bodyModel} style={styles.figModel} resizeMode="contain" />
+          )}
 
-            {/* Labels — 只在有套用穿搭時顯示 */}
-            {appliedOutfit && LABEL_DEFS.map(({ cat, side, topFrac }) => {
-              const appliedItem = appliedOutfit.selected.find(s => s.category === cat)?.item;
-              if (!appliedItem) return null;
-              return (
-                <LabelChip
-                  key={cat}
-                  cat={cat}
-                  item={appliedItem}
-                  side={side}
-                  top={FIG_TOP + topFrac * FIG_H}
-                  highlighted
-                />
-              );
-            })}
-          </View>
+          {/* Labels — 只在有套用穿搭時顯示 */}
+          {appliedOutfit && LABEL_DEFS.map(({ cat, side, topFrac }) => {
+            const appliedItem = appliedOutfit.selected.find(s => s.category === cat)?.item;
+            if (!appliedItem) return null;
+            return (
+              <LabelChip
+                key={cat}
+                cat={cat}
+                item={appliedItem}
+                side={side}
+                top={topFrac * 500}
+                highlighted
+              />
+            );
+          })}
+        </View>
 
-          {/* Applied outfit bar — tap to view result, 清除 to dismiss */}
+        {/* Bottom section — always visible */}
+        <View style={styles.mapBottom}>
+          {/* Applied outfit bar */}
           {appliedOutfit && (
             <TouchableOpacity
               style={styles.appliedBar}
@@ -746,77 +746,36 @@ export default function HomeScreen() {
           {/* Item count */}
           <Text style={styles.itemCount}>{`${totalItems} ITEMS IN YOUR CLOSET`}</Text>
 
+          {/* Nudge: missing top or bottom */}
+          {totalItems > 0 && (!wardrobeMap['上衣'] || !wardrobeMap['下著']) && (
+            <TouchableOpacity
+              style={[styles.completionNudge, { marginBottom: 12 }]}
+              onPress={() => router.push('/(tabs)/add')}
+              activeOpacity={0.7}
+            >
+              <View style={styles.nudgeDot} />
+              <Text style={styles.completionNudgeText}>
+                {!wardrobeMap['上衣'] && !wardrobeMap['下著']
+                  ? '建議新增上衣和下著，穿搭建議更完整'
+                  : !wardrobeMap['上衣']
+                  ? '再新增一件上衣，搭配效果更好'
+                  : '再新增一件下著，搭配效果更好'}
+              </Text>
+              <Text style={styles.nudgeArrow}>+</Text>
+            </TouchableOpacity>
+          )}
+
           {/* CTA */}
           {totalItems === 0 ? (
             <TouchableOpacity style={styles.primaryBtn} onPress={() => router.push('/(tabs)/add')}>
               <Text style={styles.primaryBtnText}>新增第一件衣物 →</Text>
             </TouchableOpacity>
           ) : (
-            <>
-              {/* Nudge: missing top or bottom */}
-              {!wardrobeMap['上衣'] || !wardrobeMap['下著'] ? (
-                <TouchableOpacity
-                  style={styles.completionNudge}
-                  onPress={() => router.push('/(tabs)/add')}
-                  activeOpacity={0.7}
-                >
-                  <View style={styles.nudgeDot} />
-                  <Text style={styles.completionNudgeText}>
-                    {!wardrobeMap['上衣'] && !wardrobeMap['下著']
-                      ? '建議新增上衣和下著，穿搭建議更完整'
-                      : !wardrobeMap['上衣']
-                      ? '再新增一件上衣，搭配效果更好'
-                      : '再新增一件下著，搭配效果更好'}
-                  </Text>
-                  <Text style={styles.nudgeArrow}>+</Text>
-                </TouchableOpacity>
-              ) : null}
-              <TouchableOpacity style={styles.primaryBtn} onPress={() => { slideAnim.setValue(0); setStep('occasion'); }}>
-                <Text style={styles.primaryBtnText}>{appliedOutfit ? '重新生成穿搭 →' : '生成今日穿搭 →'}</Text>
-              </TouchableOpacity>
-            </>
-          )}
-
-          {/* No body photo nudge */}
-          {!bodyPhotoUrl && (
-            <TouchableOpacity style={styles.nudge} onPress={() => router.push('/onboarding/body-photo')}>
-              <View style={styles.nudgeDot} />
-              <Text style={styles.nudgeText}>上傳全身照，讓人形看起來更像你</Text>
-              <Text style={styles.nudgeArrow}>→</Text>
+            <TouchableOpacity style={styles.primaryBtn} onPress={() => { slideAnim.setValue(0); setStep('occasion'); }}>
+              <Text style={styles.primaryBtnText}>{appliedOutfit ? '重新生成穿搭 →' : '生成今日穿搭 →'}</Text>
             </TouchableOpacity>
           )}
-
-          {/* ITEM grid — 只在有套用穿搭時顯示 */}
-          {appliedOutfit && appliedOutfit.selected.length > 0 && (
-            <View style={styles.itemsSection}>
-              <Text style={styles.itemsSectionTitle}>本次穿搭單品</Text>
-              <View style={styles.itemsGrid}>
-                {appliedOutfit.selected.map(s => ({
-                  id: s.category,
-                  name: s.item.name,
-                  brand: s.item.brand,
-                  photo_url: s.item.photo_url,
-                })).map(item => (
-                  <View key={item.id} style={styles.itemCard}>
-                    <Text style={styles.itemCardName} numberOfLines={1}>{item.name}</Text>
-                    {item.brand
-                      ? <Text style={styles.itemCardBrand} numberOfLines={1}>{item.brand}</Text>
-                      : null}
-                    {item.photo_url ? (
-                      <Image
-                        source={{ uri: item.photo_url }}
-                        style={styles.itemCardPhoto}
-                        resizeMode="contain"
-                      />
-                    ) : (
-                      <View style={styles.itemCardPhotoEmpty} />
-                    )}
-                  </View>
-                ))}
-              </View>
-            </View>
-          )}
-        </ScrollView>
+        </View>
       </SafeAreaView>
     );
   }
@@ -1179,6 +1138,9 @@ const styles = StyleSheet.create({
   figureContainer: { position: 'relative', marginHorizontal: -24, overflow: 'hidden' },
   figureWrap: { position: 'absolute' },
   bodyPhoto: { width: '100%', height: '100%', resizeMode: 'cover' },
+  figFlex: { flex: 1, position: 'relative', overflow: 'hidden' },
+  figModel: { flex: 1, width: '100%', height: undefined },
+  mapBottom: { paddingHorizontal: 24, paddingBottom: 24, paddingTop: 8 },
 
   // Labels
   labelAbsolute: { position: 'absolute' },

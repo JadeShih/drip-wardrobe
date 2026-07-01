@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Stack, router } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -16,6 +16,7 @@ function RootNavigator() {
   const [showSplash, setShowSplash] = useState(false);
   const [splashChecked, setSplashChecked] = useState(false);
   const [showGuide, setShowGuide] = useState(false);
+  const guideNavigated = useRef(false);
 
   useEffect(() => {
     // splash 暫時關閉，專注測試新手導覽
@@ -27,6 +28,7 @@ function RootNavigator() {
   useEffect(() => {
     if (loading || !splashChecked) return;
     if (showSplash || showGuide) return;
+    if (guideNavigated.current) return;
     navigate();
   }, [session, loading, showSplash, showGuide, splashChecked]);
 
@@ -61,10 +63,13 @@ function RootNavigator() {
     }
   }
 
+  function handleGuideNavigate() {
+    guideNavigated.current = true;
+    router.replace('/onboarding/welcome');
+  }
+
   function handleGuideFinished() {
-    AsyncStorage.setItem(GUIDE_KEY, '1');
     setShowGuide(false);
-    navigate();
   }
 
   return (
@@ -77,7 +82,7 @@ function RootNavigator() {
       </Stack>
       <StatusBar style="light" />
       {showSplash && <DripSplash onFinished={handleSplashFinished} />}
-      {showGuide && <OnboardingGuide onFinished={handleGuideFinished} />}
+      {showGuide && <OnboardingGuide onNavigate={handleGuideNavigate} onFinished={handleGuideFinished} />}
     </>
   );
 }

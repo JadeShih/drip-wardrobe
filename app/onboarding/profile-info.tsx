@@ -6,6 +6,11 @@ import { useAuth } from '@/context/AuthContext';
 import { supabase } from '@/lib/supabase';
 import { colors } from '@/constants/tokens';
 
+const SEXES = [
+  { value: 'female', label: '女性' },
+  { value: 'male',   label: '男性' },
+  { value: 'other',  label: '其他' },
+];
 const GENDERS = [
   { value: 'female', label: '女性風格', desc: '女裝為主' },
   { value: 'male',   label: '男性風格', desc: '男裝為主' },
@@ -23,6 +28,7 @@ const SKIN_TONES = [
   { value: 'dark',   label: '偏深', color: '#8B5E3C' },
 ];
 type Selections = {
+  sex: string;
   gender: string;
   height: string;
   body_type: string;
@@ -35,7 +41,7 @@ export default function ProfileInfoScreen() {
   const fromProfile = from === 'profile';
   const [saving, setSaving] = useState(false);
   const [sel, setSel] = useState<Selections>({
-    gender: '', height: '', body_type: '', skin_tone: '',
+    sex: '', gender: '', height: '', body_type: '', skin_tone: '',
   });
 
   // 從個人頁進來時，預填已有資料
@@ -48,6 +54,7 @@ export default function ProfileInfoScreen() {
       .then(({ data }) => {
         if (data) {
           setSel({
+            sex: data.sex ?? '',
             gender: data.gender ?? '',
             height: data.height ?? '',
             body_type: data.body_type ?? '',
@@ -61,13 +68,14 @@ export default function ProfileInfoScreen() {
     setSel(prev => ({ ...prev, [key]: value }));
   }
 
-  const canContinue = !!sel.gender && !!sel.body_type;
+  const canContinue = !!sel.sex && !!sel.gender && !!sel.body_type;
 
   async function saveAndContinue() {
     if (!user || saving) return;
     setSaving(true);
     try {
       await supabase.from('users').update({
+        sex: sel.sex,
         gender: sel.gender,
         height: sel.height || null,
         body_type: sel.body_type,
@@ -76,14 +84,17 @@ export default function ProfileInfoScreen() {
     } catch (e) {
       console.error('profile-info save error:', e);
     }
+    if (!fromProfile) {
+      await supabase.from('users').update({ onboarding_completed: true }).eq('id', user!.id);
+    }
     setSaving(false);
     if (fromProfile) router.back();
-    else router.push('/onboarding/body-photo');
+    else router.replace('/onboarding/complete');
   }
 
   function skip() {
     if (fromProfile) router.back();
-    else router.push('/onboarding/body-photo');
+    else router.replace('/onboarding/complete');
   }
 
   return (
@@ -93,10 +104,24 @@ export default function ProfileInfoScreen() {
           <Text style={styles.backText}>← 返回</Text>
         </TouchableOpacity>
         <Text style={styles.label}>{fromProfile ? '編輯資料' : '告訴我們更多'}</Text>
-        <Text style={styles.title}>你的{'\n'}穿搭輪廓</Text>
+        <Text style={styles.title}>你的穿搭輪廓</Text>
         <Text style={styles.desc}>幫助我們生成更貼近你的穿搭建議</Text>
 
-        {/* ── 性別偏好 ─────────────────────────────────── */}
+        {/* ── 性別 ─────────────────────────────────────── */}
+        <SectionTitle text="性別" required />
+        <View style={styles.cardRow}>
+          {SEXES.map(s => (
+            <TouchableOpacity
+              key={s.value}
+              style={[styles.card, sel.sex === s.value && styles.cardActive]}
+              onPress={() => set('sex', s.value)}
+            >
+              <Text style={[styles.cardLabel, sel.sex === s.value && styles.cardLabelActive]}>{s.label}</Text>
+            </TouchableOpacity>
+          ))}
+        </View>
+
+        {/* ── 穿搭偏好 ─────────────────────────────────── */}
         <SectionTitle text="穿搭偏好" required />
         <View style={styles.cardRow}>
           {GENDERS.map(g => (
@@ -205,7 +230,7 @@ const styles = StyleSheet.create({
   backBtn: { marginTop: 16, marginBottom: 8 },
   backText: { fontSize: 14, color: colors.brand.primary, fontWeight: '700', letterSpacing: 1 },
   label: { fontSize: 14, color: colors.brand.primary, letterSpacing: 2, marginTop: 24, marginBottom: 16 },
-  title: { fontSize: 36, fontWeight: '900', color: colors.text.primary, letterSpacing: -0.5, lineHeight: 40, marginBottom: 12 },
+  title: { fontSize: 36, fontWeight: '900', color: colors.text.primary, letterSpacing: -0.5, lineHeight: 44, marginBottom: 12 },
   desc: { fontSize: 14, color: colors.text.disabled, lineHeight: 22, marginBottom: 36 },
 
   // Height input
@@ -220,7 +245,7 @@ const styles = StyleSheet.create({
 
   // Cards (3 column)
   cardRow: { flexDirection: 'row', gap: 10, marginBottom: 32 },
-  card: { flex: 1, borderWidth: 1, borderColor: colors.border.default, padding: 14, gap: 4 },
+  card: { flex: 1, height: 72, borderWidth: 1, borderColor: colors.border.default, padding: 14, gap: 4, justifyContent: 'center' },
   cardActive: { borderColor: colors.brand.primary, backgroundColor: 'rgba(156,228,28,0.08)' },
   cardLabel: { fontSize: 13, fontWeight: '800', color: '#aaa', letterSpacing: 0.3 },
   cardLabelActive: { color: colors.brand.primary },
@@ -229,7 +254,7 @@ const styles = StyleSheet.create({
 
   // Chips (wrapping)
   chipRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 10, marginBottom: 32 },
-  chip: { borderWidth: 1, borderColor: colors.border.default, paddingHorizontal: 16, paddingVertical: 10, gap: 3 },
+  chip: { height: 72, borderWidth: 1, borderColor: colors.border.default, paddingHorizontal: 16, justifyContent: 'center', gap: 3 },
   chipActive: { borderColor: colors.brand.primary, backgroundColor: 'rgba(156,228,28,0.08)' },
   chipLabel: { fontSize: 13, fontWeight: '700', color: '#aaa' },
   chipLabelActive: { color: colors.brand.primary },

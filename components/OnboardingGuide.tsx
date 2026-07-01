@@ -40,10 +40,11 @@ const PAGES = [
 ];
 
 interface Props {
+  onNavigate: () => void;
   onFinished: () => void;
 }
 
-export default function OnboardingGuide({ onFinished }: Props) {
+export default function OnboardingGuide({ onNavigate, onFinished }: Props) {
   const [currentIndex, setCurrentIndex] = useState(0);
   const flatListRef = useRef<FlatList>(null);
 
@@ -53,13 +54,16 @@ export default function OnboardingGuide({ onFinished }: Props) {
   const btnScale = useRef(new Animated.Value(1)).current;
 
   function handleCtaPress() {
+    // 立刻導頁，welcome 在底層載入
+    onNavigate();
+
     // 按鈕縮放回彈
     Animated.sequence([
       Animated.timing(btnScale, { toValue: 0.95, duration: 80, useNativeDriver: true }),
       Animated.timing(btnScale, { toValue: 1, duration: 80, useNativeDriver: true }),
     ]).start();
 
-    // 整頁 fade out + scale up
+    // 整頁 fade out + scale up，結束後移除 guide
     Animated.parallel([
       Animated.timing(fadeAnim, { toValue: 0, duration: 400, useNativeDriver: true }),
       Animated.timing(scaleAnim, { toValue: 1.06, duration: 400, useNativeDriver: true }),
@@ -83,24 +87,22 @@ export default function OnboardingGuide({ onFinished }: Props) {
         renderItem={({ item }) => (
           item.last ? (
             // 第四頁：fade+scale 動畫容器
-            <Animated.View style={[styles.page, { opacity: fadeAnim, transform: [{ scale: scaleAnim }] }]}>
-              <View style={styles.lastBg} />
-
+            <Animated.View style={[styles.page, styles.lastPage, { opacity: fadeAnim, transform: [{ scale: scaleAnim }] }]}>
               <View style={styles.lastBlock}>
                 <Text style={styles.lastTitle1}>{item.title1}</Text>
                 <Text style={styles.lastTitle2}>{item.title2}</Text>
                 <Text style={styles.lastSubtitle}>{item.subtitle}</Text>
-              </View>
 
-              <Animated.View style={[styles.ctaWrap, { transform: [{ scale: btnScale }] }]}>
-                <TouchableOpacity
-                  style={styles.ctaBtn}
-                  onPress={handleCtaPress}
-                  activeOpacity={1}
-                >
-                  <Text style={styles.ctaText}>開始建立風格檔案 →</Text>
-                </TouchableOpacity>
-              </Animated.View>
+                <Animated.View style={[styles.ctaWrap, { transform: [{ scale: btnScale }] }]}>
+                  <TouchableOpacity
+                    style={styles.ctaBtn}
+                    onPress={handleCtaPress}
+                    activeOpacity={1}
+                  >
+                    <Text style={styles.ctaText}>開始建立風格檔案 →</Text>
+                  </TouchableOpacity>
+                </Animated.View>
+              </View>
             </Animated.View>
           ) : (
             // 前三頁
@@ -117,7 +119,7 @@ export default function OnboardingGuide({ onFinished }: Props) {
               <View style={styles.footer}>
                 <Dots currentIndex={currentIndex} />
                 <TouchableOpacity
-                  onPress={onFinished}
+                  onPress={() => flatListRef.current?.scrollToIndex({ index: PAGES.length - 1, animated: true })}
                   hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
                 >
                   <Text style={styles.skip}>全部略過</Text>
@@ -227,16 +229,13 @@ const styles = StyleSheet.create({
   },
 
   // 第四頁
-  lastBg: {
-    ...StyleSheet.absoluteFillObject,
-    backgroundColor: colors.background.primary,
+  lastPage: {
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   lastBlock: {
-    position: 'absolute',
-    top: height * 0.34,
-    left: 0,
-    right: 0,
     alignItems: 'center',
+    paddingHorizontal: 24,
   },
   lastTitle1: {
     fontSize: 41,
@@ -262,21 +261,20 @@ const styles = StyleSheet.create({
     letterSpacing: 0.3,
   },
   ctaWrap: {
-    position: 'absolute',
-    top: height * 0.59,
-    left: 0,
-    right: 0,
+    marginTop: 32,
     alignItems: 'center',
   },
   ctaBtn: {
     backgroundColor: '#101010',
+    borderWidth: 1,
+    borderColor: colors.border.dashed,
     width: 260,
     height: 56,
     justifyContent: 'center',
     alignItems: 'center',
   },
   ctaText: {
-    color: '#888888',
+    color: colors.text.label,
     fontSize: 14,
     fontWeight: '400',
     letterSpacing: 0.5,
