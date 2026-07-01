@@ -9,6 +9,7 @@ import { router, useFocusEffect } from 'expo-router';
 import { useAuth } from '@/context/AuthContext';
 import { supabase } from '@/lib/supabase';
 import { getSignedUrl } from '@/lib/storage';
+import { colors } from '@/constants/tokens';
 
 type UserProfile = {
   body_photo_url: string | null;
@@ -242,33 +243,33 @@ export default function ProfileScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#0a0a0a' },
+  container: { flex: 1, backgroundColor: colors.background.primary },
   inner: { paddingHorizontal: 24, paddingBottom: 60 },
   header: { marginTop: 16, marginBottom: 32 },
-  logo: { fontSize: 14, color: '#9CE41C', letterSpacing: 6, fontWeight: '800' },
+  logo: { fontSize: 14, color: colors.brand.primary, letterSpacing: 6, fontWeight: '800' },
 
   avatarRow: { flexDirection: 'row', alignItems: 'center', gap: 16, marginBottom: 32 },
   avatarInitial: {
-    width: 64, height: 64, backgroundColor: '#9CE41C',
+    width: 64, height: 64, backgroundColor: colors.brand.primary,
     alignItems: 'center', justifyContent: 'center',
   },
-  avatarInitialText: { fontSize: 26, fontWeight: '900', color: '#0a0a0a' },
-  name: { fontSize: 18, fontWeight: '900', color: '#fff', marginBottom: 4 },
-  email: { fontSize: 14, color: '#666666' },
+  avatarInitialText: { fontSize: 26, fontWeight: '900', color: colors.text.onBrand },
+  name: { fontSize: 18, fontWeight: '900', color: colors.text.primary, marginBottom: 4 },
+  email: { fontSize: 14, color: colors.text.placeholder },
 
   statsRow: {
-    flexDirection: 'row', borderWidth: 1, borderColor: '#1a1a1a',
+    flexDirection: 'row', borderWidth: 1, borderColor: colors.background.elevated,
     padding: 20, marginBottom: 32,
   },
   stat: { flex: 1, alignItems: 'center', gap: 4 },
-  statNum: { fontSize: 28, fontWeight: '900', color: '#fff' },
-  statLabel: { fontSize: 14, color: '#666666', letterSpacing: 1 },
-  statDivider: { width: 1, backgroundColor: '#1a1a1a' },
+  statNum: { fontSize: 28, fontWeight: '900', color: colors.text.primary },
+  statLabel: { fontSize: 14, color: colors.text.placeholder, letterSpacing: 1 },
+  statDivider: { width: 1, backgroundColor: colors.background.elevated },
 
   section: { marginBottom: 32 },
-  sectionLabel: { fontSize: 14, color: '#666666', letterSpacing: 2, marginBottom: 16 },
+  sectionLabel: { fontSize: 14, color: colors.text.placeholder, letterSpacing: 2, marginBottom: 16 },
 
-  bodyPhotoWrap: { position: 'relative', width: '100%', height: 280, backgroundColor: '#111111' },
+  bodyPhotoWrap: { position: 'relative', width: '100%', height: 280, backgroundColor: colors.background.card },
   bodyPhotoImg: { width: '100%', height: '100%' },
   bodyPhotoOverlay: {
     position: 'absolute', bottom: 0, left: 0, right: 0,
@@ -277,49 +278,49 @@ const styles = StyleSheet.create({
   bodyPhotoOverlayText: { fontSize: 13, color: '#aaaaaa', letterSpacing: 1 },
   bodyPhotoEmpty: {
     flex: 1, alignItems: 'center', justifyContent: 'center', gap: 10,
-    borderWidth: 1, borderColor: '#1e1e1e', borderStyle: 'dashed',
+    borderWidth: 1, borderColor: colors.border.subtle, borderStyle: 'dashed',
   },
-  bodyPhotoEmptyText: { fontSize: 14, color: '#444444', letterSpacing: 1 },
-  bodyPhotoEmptyAction: { fontSize: 14, color: '#9CE41C', letterSpacing: 1 },
+  bodyPhotoEmptyText: { fontSize: 14, color: colors.text.disabled, letterSpacing: 1 },
+  bodyPhotoEmptyAction: { fontSize: 14, color: colors.brand.primary, letterSpacing: 1 },
   tags: { flexDirection: 'row', gap: 8, flexWrap: 'wrap', alignItems: 'center' },
-  tag: { backgroundColor: '#9CE41C', paddingHorizontal: 14, paddingVertical: 8 },
-  tagText: { color: '#0a0a0a', fontWeight: '800', fontSize: 14, letterSpacing: 1 },
+  tag: { backgroundColor: colors.brand.primary, paddingHorizontal: 14, paddingVertical: 8 },
+  tagText: { color: colors.text.onBrand, fontWeight: '800', fontSize: 14, letterSpacing: 1 },
   tagEdit: { paddingHorizontal: 4, paddingVertical: 8 },
-  tagEditText: { fontSize: 13, color: '#555', letterSpacing: 1 },
+  tagEditText: { fontSize: 13, color: colors.text.disabled, letterSpacing: 1 },
 
   row: {
     flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
-    paddingVertical: 16, borderBottomWidth: 1, borderBottomColor: '#1a1a1a',
+    paddingVertical: 16, borderBottomWidth: 1, borderBottomColor: colors.background.elevated,
   },
-  rowText: { fontSize: 14, color: '#fff', letterSpacing: 0.5 },
-  rowSubText: { fontSize: 12, color: '#888', letterSpacing: 0.3, marginTop: 2 },
+  rowText: { fontSize: 14, color: colors.text.primary, letterSpacing: 0.5 },
+  rowSubText: { fontSize: 12, color: colors.text.secondary, letterSpacing: 0.3, marginTop: 2 },
   doneTag: {
     backgroundColor: 'rgba(156,228,28,0.12)',
     borderWidth: 1, borderColor: 'rgba(156,228,28,0.3)',
     paddingHorizontal: 8, paddingVertical: 2,
   },
-  doneTagText: { fontSize: 11, color: '#9CE41C', fontWeight: '700', letterSpacing: 0.5 },
-  rowArrow: { fontSize: 16, color: '#666666' },
+  doneTagText: { fontSize: 11, color: colors.brand.primary, fontWeight: '700', letterSpacing: 0.5 },
+  rowArrow: { fontSize: 16, color: colors.text.placeholder },
 
   // Wishlist
   wishlistHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 },
-  wishlistCount: { fontSize: 12, color: '#9CE41C', letterSpacing: 1 },
-  wishlistEmpty: { borderWidth: 1, borderColor: '#1a1a1a', borderStyle: 'dashed', padding: 20, alignItems: 'center', gap: 8 },
-  wishlistEmptyText: { fontSize: 14, color: '#444', letterSpacing: 0.5 },
+  wishlistCount: { fontSize: 12, color: colors.brand.primary, letterSpacing: 1 },
+  wishlistEmpty: { borderWidth: 1, borderColor: colors.background.elevated, borderStyle: 'dashed', padding: 20, alignItems: 'center', gap: 8 },
+  wishlistEmptyText: { fontSize: 14, color: colors.text.disabled, letterSpacing: 0.5 },
   wishlistEmptyHint: { fontSize: 12, color: '#333', textAlign: 'center', lineHeight: 18 },
   wishlistList: { gap: 1 },
   wishlistItem: {
     flexDirection: 'row', alignItems: 'center', gap: 12,
-    backgroundColor: '#111', paddingHorizontal: 14, paddingVertical: 14,
+    backgroundColor: colors.background.card, paddingHorizontal: 14, paddingVertical: 14,
   },
   wishlistInfo: { flex: 1, gap: 3 },
-  wishlistCat: { fontSize: 10, color: '#9CE41C', letterSpacing: 2, marginBottom: 2 },
-  wishlistDesc: { fontSize: 14, fontWeight: '700', color: '#fff' },
-  wishlistReason: { fontSize: 12, color: '#555', lineHeight: 18 },
+  wishlistCat: { fontSize: 10, color: colors.brand.primary, letterSpacing: 2, marginBottom: 2 },
+  wishlistDesc: { fontSize: 14, fontWeight: '700', color: colors.text.primary },
+  wishlistReason: { fontSize: 12, color: colors.text.disabled, lineHeight: 18 },
 
   signOutBtn: {
     borderWidth: 1, borderColor: '#333333',
     paddingVertical: 16, alignItems: 'center',
   },
-  signOutText: { fontSize: 14, color: '#888888', letterSpacing: 2 },
+  signOutText: { fontSize: 14, color: colors.text.secondary, letterSpacing: 2 },
 });

@@ -3,6 +3,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useAuth } from '@/context/AuthContext';
 import { supabase } from '@/lib/supabase';
+import { colors } from '@/constants/tokens';
 
 function getStyleTags(picks: string[]): string[] {
   const counts: Record<string, number> = {};
@@ -73,17 +74,17 @@ export default function StyleResultScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#0a0a0a' },
+  container: { flex: 1, backgroundColor: colors.background.primary },
   inner: { flex: 1, paddingHorizontal: 24, justifyContent: 'space-between', paddingBottom: 40 },
   top: { marginTop: 60 },
-  label: { fontSize: 14, color: '#888888', letterSpacing: 2, marginBottom: 24 },
+  label: { fontSize: 14, color: colors.text.secondary, letterSpacing: 2, marginBottom: 24 },
   tags: { flexDirection: 'row', gap: 8, marginBottom: 32, flexWrap: 'wrap' },
-  tag: { backgroundColor: '#9CE41C', paddingHorizontal: 16, paddingVertical: 10, gap: 2 },
-  tagEn: { color: '#0a0a0a', fontWeight: '900', fontSize: 14, letterSpacing: 2 },
-  tagZh: { color: '#0a0a0a', fontWeight: '600', fontSize: 14 },
-  desc: { fontSize: 16, color: '#888888', lineHeight: 26 },
+  tag: { backgroundColor: colors.brand.primary, paddingHorizontal: 16, paddingVertical: 10, gap: 2 },
+  tagEn: { color: colors.text.onBrand, fontWeight: '900', fontSize: 14, letterSpacing: 2 },
+  tagZh: { color: colors.text.onBrand, fontWeight: '600', fontSize: 14 },
+  desc: { fontSize: 16, color: colors.text.secondary, lineHeight: 26 },
   bottom: { gap: 16 },
-  btn: { backgroundColor: '#9CE41C', paddingVertical: 18, alignItems: 'center' },
-  btnText: { color: '#0a0a0a', fontWeight: '800', fontSize: 14, letterSpacing: 2 },
-  retake: { color: '#666666', fontSize: 14, letterSpacing: 1, textAlign: 'center' },
+  btn: { backgroundColor: colors.brand.primary, paddingVertical: 18, alignItems: 'center' },
+  btnText: { color: colors.text.onBrand, fontWeight: '800', fontSize: 14, letterSpacing: 2 },
+  retake: { color: colors.text.placeholder, fontSize: 14, letterSpacing: 1, textAlign: 'center' },
 });

@@ -10,6 +10,7 @@ import { useAuth } from '@/context/AuthContext';
 import { supabase } from '@/lib/supabase';
 import { removeBackground } from '@/lib/background-removal';
 import { IconSymbol } from '@/components/ui/icon-symbol';
+import { colors } from '@/constants/tokens';
 
 const CATEGORIES = ['上衣', '下著', '外套', '鞋子', '配件'];
 
@@ -113,7 +114,7 @@ export default function AddScreen() {
         {/* Photo picker */}
         {removingBg ? (
           <View style={styles.removingBgBox}>
-            <ActivityIndicator color="#9CE41C" size="small" />
+            <ActivityIndicator color={colors.brand.primary} size="small" />
             <Text style={styles.removingBgText}>自動去背中...</Text>
           </View>
         ) : photo ? (
@@ -131,11 +132,11 @@ export default function AddScreen() {
           <>
             <View style={styles.photoActions}>
               <TouchableOpacity style={styles.photoBtn} onPress={takePhoto}>
-                <IconSymbol name="camera.fill" size={28} color="#9CE41C" />
+                <IconSymbol name="camera.fill" size={28} color={colors.brand.primary} />
                 <Text style={styles.photoBtnText}>拍攝照片</Text>
               </TouchableOpacity>
               <TouchableOpacity style={styles.photoBtn} onPress={pickPhoto}>
-                <IconSymbol name="photo.on.rectangle" size={28} color="#9CE41C" />
+                <IconSymbol name="photo.on.rectangle" size={28} color={colors.brand.primary} />
                 <Text style={styles.photoBtnText}>從相簿選擇</Text>
               </TouchableOpacity>
             </View>
@@ -153,9 +154,9 @@ export default function AddScreen() {
           value={name}
           onChangeText={setName}
           placeholder="例：白色牛津衫"
-          placeholderTextColor="#444"
-          cursorColor="#9CE41C"
-          selectionColor="#9CE41C"
+          placeholderTextColor={colors.text.disabled}
+          cursorColor={colors.brand.primary}
+          selectionColor={colors.brand.primary}
         />
 
         {/* Brand */}
@@ -165,9 +166,9 @@ export default function AddScreen() {
           value={brand}
           onChangeText={setBrand}
           placeholder="例：Uniqlo"
-          placeholderTextColor="#444"
-          cursorColor="#9CE41C"
-          selectionColor="#9CE41C"
+          placeholderTextColor={colors.text.disabled}
+          cursorColor={colors.brand.primary}
+          selectionColor={colors.brand.primary}
         />
 
         {/* Category */}
@@ -190,7 +191,7 @@ export default function AddScreen() {
           disabled={!canSave}
         >
           {uploading
-            ? <ActivityIndicator color="#0a0a0a" />
+            ? <ActivityIndicator color={colors.text.onBrand} />
             : <Text style={styles.saveBtnText}>加入衣櫃 →</Text>
           }
         </TouchableOpacity>
@@ -200,28 +201,28 @@ export default function AddScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#0a0a0a' },
+  container: { flex: 1, backgroundColor: colors.background.primary },
   inner: { paddingHorizontal: 24, paddingBottom: 40 },
   header: { marginTop: 16, marginBottom: 32 },
-  logo: { fontSize: 14, color: '#9CE41C', letterSpacing: 6, fontWeight: '800' },
-  stepLabel: { fontSize: 14, color: '#666666', letterSpacing: 2, marginBottom: 8 },
-  title: { fontSize: 28, fontWeight: '900', color: '#fff', letterSpacing: -0.5, marginBottom: 24 },
+  logo: { fontSize: 14, color: colors.brand.primary, letterSpacing: 6, fontWeight: '800' },
+  stepLabel: { fontSize: 14, color: colors.text.placeholder, letterSpacing: 2, marginBottom: 8 },
+  title: { fontSize: 28, fontWeight: '900', color: colors.text.primary, letterSpacing: -0.5, marginBottom: 24 },
 
   photoActions: { flexDirection: 'row', gap: 12, marginBottom: 12 },
   photoBtn: {
-    flex: 1, borderWidth: 1, borderColor: '#555555', borderStyle: 'dashed',
+    flex: 1, borderWidth: 1, borderColor: colors.border.dashed, borderStyle: 'dashed',
     paddingVertical: 40, alignItems: 'center', gap: 12,
   },
-  photoBtnText: { fontSize: 14, color: '#888888', letterSpacing: 1 },
+  photoBtnText: { fontSize: 14, color: colors.text.secondary, letterSpacing: 1 },
   photoTip: { flexDirection: 'row', alignItems: 'flex-start', gap: 8, marginBottom: 24 },
-  photoTipDot: { width: 5, height: 5, backgroundColor: '#9CE41C', marginTop: 5 },
-  photoTipText: { flex: 1, fontSize: 12, color: '#555555', lineHeight: 18, letterSpacing: 0.3 },
+  photoTipDot: { width: 5, height: 5, backgroundColor: colors.brand.primary, marginTop: 5 },
+  photoTipText: { flex: 1, fontSize: 12, color: colors.text.disabled, lineHeight: 18, letterSpacing: 0.3 },
 
   removingBgBox: {
     height: 280, alignItems: 'center', justifyContent: 'center',
-    gap: 12, borderWidth: 1, borderColor: '#222', marginBottom: 32,
+    gap: 12, borderWidth: 1, borderColor: colors.border.default, marginBottom: 32,
   },
-  removingBgText: { fontSize: 13, color: '#666', letterSpacing: 1 },
+  removingBgText: { fontSize: 13, color: colors.text.placeholder, letterSpacing: 1 },
 
   preview: { marginBottom: 32 },
   previewImg: { width: '100%', height: 280 },
@@ -231,20 +232,20 @@ const styles = StyleSheet.create({
   },
   previewChange: { fontSize: 14, color: '#aaaaaa', letterSpacing: 1 },
 
-  sectionLabel: { fontSize: 14, color: '#666666', letterSpacing: 2, marginBottom: 12 },
+  sectionLabel: { fontSize: 14, color: colors.text.placeholder, letterSpacing: 2, marginBottom: 12 },
   input: {
     borderWidth: 1, borderColor: '#333333',
     paddingHorizontal: 16, paddingVertical: 14,
-    fontSize: 14, color: '#fff', marginBottom: 24, letterSpacing: 0.5,
+    fontSize: 14, color: colors.text.primary, marginBottom: 24, letterSpacing: 0.5,
   },
 
   chips: { flexDirection: 'row', flexWrap: 'wrap', gap: 10, marginBottom: 40 },
   chip: { paddingHorizontal: 20, paddingVertical: 12, borderWidth: 1, borderColor: '#333333' },
-  chipActive: { borderColor: '#9CE41C', backgroundColor: '#9CE41C' },
-  chipText: { fontSize: 14, color: '#888888', letterSpacing: 1 },
-  chipTextActive: { color: '#0a0a0a', fontWeight: '800' },
+  chipActive: { borderColor: colors.brand.primary, backgroundColor: colors.brand.primary },
+  chipText: { fontSize: 14, color: colors.text.secondary, letterSpacing: 1 },
+  chipTextActive: { color: colors.text.onBrand, fontWeight: '800' },
 
-  saveBtn: { backgroundColor: '#9CE41C', paddingVertical: 18, alignItems: 'center' },
+  saveBtn: { backgroundColor: colors.brand.primary, paddingVertical: 18, alignItems: 'center' },
   saveBtnDisabled: { opacity: 0.35 },
-  saveBtnText: { color: '#0a0a0a', fontWeight: '800', fontSize: 14, letterSpacing: 2 },
+  saveBtnText: { color: colors.text.onBrand, fontWeight: '800', fontSize: 14, letterSpacing: 2 },
 });

@@ -5,31 +5,30 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { AuthProvider, useAuth } from '@/context/AuthContext';
 import { supabase } from '@/lib/supabase';
 import DripSplash from '@/components/DripSplash';
+import OnboardingGuide from '@/components/OnboardingGuide';
 
 const SPLASH_KEY = 'drip:splashShown';
+const GUIDE_KEY = 'drip:guideShown';
 
 function RootNavigator() {
   const { session, loading } = useAuth();
   const [checking, setChecking] = useState(true);
   const [showSplash, setShowSplash] = useState(false);
   const [splashChecked, setSplashChecked] = useState(false);
+  const [showGuide, setShowGuide] = useState(false);
 
-  // 檢查是否需要顯示開場動畫
   useEffect(() => {
-    AsyncStorage.getItem(SPLASH_KEY).then(val => {
-      if (!val) {
-        setShowSplash(true);
-        AsyncStorage.setItem(SPLASH_KEY, '1');
-      }
-      setSplashChecked(true);
-    });
+    // splash 暫時關閉，專注測試新手導覽
+    setShowSplash(false);
+    setSplashChecked(true);
+    setShowGuide(true);
   }, []);
 
   useEffect(() => {
     if (loading || !splashChecked) return;
-    if (showSplash) return; // 等動畫結束再導航
+    if (showSplash || showGuide) return;
     navigate();
-  }, [session, loading, showSplash, splashChecked]);
+  }, [session, loading, showSplash, showGuide, splashChecked]);
 
   function navigate() {
     if (!session) {
@@ -52,8 +51,19 @@ function RootNavigator() {
       });
   }
 
-  function handleSplashFinished() {
+  async function handleSplashFinished() {
     setShowSplash(false);
+    const seen = await AsyncStorage.getItem(GUIDE_KEY);
+    if (!seen) {
+      setShowGuide(true);
+    } else {
+      navigate();
+    }
+  }
+
+  function handleGuideFinished() {
+    AsyncStorage.setItem(GUIDE_KEY, '1');
+    setShowGuide(false);
     navigate();
   }
 
@@ -67,6 +77,7 @@ function RootNavigator() {
       </Stack>
       <StatusBar style="light" />
       {showSplash && <DripSplash onFinished={handleSplashFinished} />}
+      {showGuide && <OnboardingGuide onFinished={handleGuideFinished} />}
     </>
   );
 }

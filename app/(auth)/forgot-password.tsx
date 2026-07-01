@@ -6,6 +6,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { supabase } from '@/lib/supabase';
+import { colors } from '@/constants/tokens';
 
 function isValidEmail(email: string) {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
@@ -82,10 +83,10 @@ export default function ForgotPasswordScreen() {
             value={email}
             onChangeText={(v) => { setEmail(v); setError(''); }}
             placeholder="your@email.com"
-            placeholderTextColor="#555555"
+            placeholderTextColor={colors.text.disabled}
             autoCapitalize="none"
             keyboardType="email-address"
-            cursorColor="#9CE41C"
+            cursorColor={colors.brand.primary}
           />
           {error ? <Text style={styles.errorText}>{error}</Text> : null}
 
@@ -103,38 +104,38 @@ export default function ForgotPasswordScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#0a0a0a' },
+  container: { flex: 1, backgroundColor: colors.background.primary },
   backBtn: { paddingHorizontal: 24, paddingVertical: 12 },
-  backText: { color: '#9CE41C', fontSize: 12, letterSpacing: 1.5, fontWeight: '700' },
+  backText: { color: colors.brand.primary, fontSize: 12, letterSpacing: 1.5, fontWeight: '700' },
   inner: { flex: 1, justifyContent: 'center', paddingHorizontal: 24 },
   logo: {
-    fontSize: 48, fontWeight: '900', color: '#9CE41C',
+    fontSize: 48, fontWeight: '900', color: colors.brand.primary,
     letterSpacing: 8, textAlign: 'center', marginBottom: 4,
   },
   subtitle: {
-    fontSize: 10, color: '#888888', letterSpacing: 3,
+    fontSize: 10, color: colors.text.secondary, letterSpacing: 3,
     textAlign: 'center', marginBottom: 32,
   },
   desc: {
-    fontSize: 13, color: '#666', textAlign: 'center',
+    fontSize: 13, color: colors.text.placeholder, textAlign: 'center',
     lineHeight: 20, marginBottom: 32,
   },
-  label: { fontSize: 10, color: '#999999', letterSpacing: 2, marginBottom: 6 },
+  label: { fontSize: 10, color: colors.text.label, letterSpacing: 2, marginBottom: 6 },
   input: {
-    backgroundColor: '#111', borderWidth: 1, borderColor: '#222',
-    color: '#fff', paddingHorizontal: 16, paddingVertical: 14, fontSize: 14,
+    backgroundColor: colors.background.card, borderWidth: 1, borderColor: colors.border.default,
+    color: colors.text.primary, paddingHorizontal: 16, paddingVertical: 14, fontSize: 14,
   },
-  inputError: { borderColor: '#ff4444' },
-  errorText: { color: '#ff4444', fontSize: 11, marginTop: 6, letterSpacing: 0.5 },
+  inputError: { borderColor: colors.feedback.error },
+  errorText: { color: colors.feedback.error, fontSize: 11, marginTop: 6, letterSpacing: 0.5 },
   btn: {
-    backgroundColor: '#9CE41C', paddingVertical: 16,
+    backgroundColor: colors.brand.primary, paddingVertical: 16,
     alignItems: 'center', marginTop: 24,
   },
   btnWide: { paddingHorizontal: 48 },
   btnDisabled: { opacity: 0.5 },
-  btnText: { color: '#0a0a0a', fontWeight: '800', fontSize: 13, letterSpacing: 2 },
+  btnText: { color: colors.text.onBrand, fontWeight: '800', fontSize: 13, letterSpacing: 2 },
   center: { flex: 1, justifyContent: 'center', alignItems: 'center', paddingHorizontal: 24 },
-  successIcon: { fontSize: 48, color: '#9CE41C', marginBottom: 16 },
-  successTitle: { fontSize: 20, fontWeight: '800', color: '#fff', letterSpacing: 2, marginBottom: 8 },
-  successSub: { fontSize: 12, color: '#666', letterSpacing: 1, marginBottom: 40, textAlign: 'center', lineHeight: 20 },
+  successIcon: { fontSize: 48, color: colors.brand.primary, marginBottom: 16 },
+  successTitle: { fontSize: 20, fontWeight: '800', color: colors.text.primary, letterSpacing: 2, marginBottom: 8 },
+  successSub: { fontSize: 12, color: colors.text.placeholder, letterSpacing: 1, marginBottom: 40, textAlign: 'center', lineHeight: 20 },
 });

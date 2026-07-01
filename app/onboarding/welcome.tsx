@@ -4,6 +4,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { useAuth } from '@/context/AuthContext';
 import { supabase } from '@/lib/supabase';
+import { colors } from '@/constants/tokens';
 
 const { width: W } = Dimensions.get('window');
 const LETTERS = ['D', 'R', 'I', 'P'];
@@ -154,7 +155,7 @@ export default function WelcomeScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#0a0a0a' },
+  container: { flex: 1, backgroundColor: colors.background.primary },
   inner: {
     flex: 1, paddingHorizontal: 24,
     justifyContent: 'space-between', paddingBottom: 40, paddingTop: 48,
@@ -164,7 +165,7 @@ const styles = StyleSheet.create({
   logoArea: { gap: 10 },
   lettersRow: { flexDirection: 'row', gap: 4 },
   letter: {
-    fontSize: 76, fontWeight: '900', color: '#ffffff',
+    fontSize: 76, fontWeight: '900', color: colors.text.primary,
     letterSpacing: -2, lineHeight: 84,
   },
   lineContainer: {
@@ -173,21 +174,21 @@ const styles = StyleSheet.create({
   },
   line: {
     height: 4, width: '100%',
-    backgroundColor: '#9CE41C',
+    backgroundColor: colors.brand.primary,
   },
 
   // Content
   content: { flex: 1, justifyContent: 'flex-start', paddingTop: 48 },
-  greeting: { fontSize: 14, color: '#888888', letterSpacing: 2, marginBottom: 16 },
+  greeting: { fontSize: 14, color: colors.text.secondary, letterSpacing: 2, marginBottom: 16 },
   title: {
-    fontSize: 40, fontWeight: '900', color: '#fff',
+    fontSize: 40, fontWeight: '900', color: colors.text.primary,
     letterSpacing: -1, lineHeight: 44, marginBottom: 24,
   },
-  desc: { fontSize: 15, color: '#666666', lineHeight: 26 },
+  desc: { fontSize: 15, color: colors.text.placeholder, lineHeight: 26 },
 
   // Buttons
   bottom: { gap: 16 },
-  btn: { backgroundColor: '#9CE41C', paddingVertical: 18, alignItems: 'center' },
-  btnText: { color: '#0a0a0a', fontWeight: '800', fontSize: 14, letterSpacing: 2 },
-  skip: { color: '#555555', fontSize: 14, letterSpacing: 1, textAlign: 'center' },
+  btn: { backgroundColor: colors.brand.primary, paddingVertical: 18, alignItems: 'center' },
+  btnText: { color: colors.text.onBrand, fontWeight: '800', fontSize: 14, letterSpacing: 2 },
+  skip: { color: colors.text.disabled, fontSize: 14, letterSpacing: 1, textAlign: 'center' },
 });

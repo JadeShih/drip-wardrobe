@@ -7,6 +7,7 @@ import { useAuth } from '@/context/AuthContext';
 import { supabase } from '@/lib/supabase';
 import { removeBackground } from '@/lib/background-removal';
 import { IconSymbol } from '@/components/ui/icon-symbol';
+import { colors } from '@/constants/tokens';
 
 export default function BodyPhotoScreen() {
   const { user } = useAuth();
@@ -124,7 +125,7 @@ export default function BodyPhotoScreen() {
 
         {removingBg ? (
           <View style={styles.removingBgBox}>
-            <ActivityIndicator color="#9CE41C" size="small" />
+            <ActivityIndicator color={colors.brand.primary} size="small" />
             <Text style={styles.removingBgText}>自動去背中...</Text>
           </View>
         ) : photo ? (
@@ -137,11 +138,11 @@ export default function BodyPhotoScreen() {
         ) : (
           <View style={styles.photoActions}>
             <TouchableOpacity style={styles.photoBtn} onPress={takePhoto}>
-              <IconSymbol name="camera.fill" size={28} color="#9CE41C" />
+              <IconSymbol name="camera.fill" size={28} color={colors.brand.primary} />
               <Text style={styles.photoBtnText}>拍攝照片</Text>
             </TouchableOpacity>
             <TouchableOpacity style={styles.photoBtn} onPress={pickPhoto}>
-              <IconSymbol name="photo.on.rectangle" size={28} color="#9CE41C" />
+              <IconSymbol name="photo.on.rectangle" size={28} color={colors.brand.primary} />
               <Text style={styles.photoBtnText}>從相簿選擇</Text>
             </TouchableOpacity>
           </View>
@@ -162,34 +163,34 @@ export default function BodyPhotoScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#0a0a0a' },
+  container: { flex: 1, backgroundColor: colors.background.primary },
   inner: { paddingHorizontal: 24, paddingBottom: 40 },
   backBtn: { marginTop: 16, marginBottom: 8 },
-  backText: { fontSize: 14, color: '#9CE41C', fontWeight: '700', letterSpacing: 1 },
+  backText: { fontSize: 14, color: colors.brand.primary, fontWeight: '700', letterSpacing: 1 },
   top: { marginTop: 24 },
-  label: { fontSize: 14, color: '#9CE41C', letterSpacing: 2, marginBottom: 16 },
+  label: { fontSize: 14, color: colors.brand.primary, letterSpacing: 2, marginBottom: 16 },
   title: {
-    fontSize: 36, fontWeight: '900', color: '#fff',
+    fontSize: 36, fontWeight: '900', color: colors.text.primary,
     letterSpacing: -0.5, lineHeight: 40, marginBottom: 16,
   },
-  desc: { fontSize: 14, color: '#888888', lineHeight: 22, marginBottom: 16 },
-  tips: { borderWidth: 1, borderColor: '#222222', padding: 16, gap: 10 },
-  tipsTitle: { fontSize: 14, color: '#999999', letterSpacing: 2, marginBottom: 12 },
+  desc: { fontSize: 14, color: colors.text.secondary, lineHeight: 22, marginBottom: 16 },
+  tips: { borderWidth: 1, borderColor: colors.border.default, padding: 16, gap: 10 },
+  tipsTitle: { fontSize: 14, color: colors.text.label, letterSpacing: 2, marginBottom: 12 },
   tipRow: { flexDirection: 'row', alignItems: 'center', gap: 12, marginBottom: 10 },
-  tipDot: { width: 8, height: 8, backgroundColor: '#9CE41C' },
-  tip: { fontSize: 14, color: '#888888', flex: 1 },
+  tipDot: { width: 8, height: 8, backgroundColor: colors.brand.primary },
+  tip: { fontSize: 14, color: colors.text.secondary, flex: 1 },
   photoActions: { flex: 1, flexDirection: 'row', gap: 12, alignItems: 'center', marginVertical: 32 },
   photoBtn: {
-    flex: 1, borderWidth: 1, borderColor: '#555555', borderStyle: 'dashed',
+    flex: 1, borderWidth: 1, borderColor: colors.border.dashed, borderStyle: 'dashed',
     paddingVertical: 40, alignItems: 'center', gap: 12,
   },
-  photoBtnText: { fontSize: 14, color: '#888888', letterSpacing: 1 },
+  photoBtnText: { fontSize: 14, color: colors.text.secondary, letterSpacing: 1 },
   removingBgBox: {
     width: '100%', aspectRatio: 9 / 16,
     alignItems: 'center', justifyContent: 'center',
-    gap: 12, borderWidth: 1, borderColor: '#222', marginVertical: 24,
+    gap: 12, borderWidth: 1, borderColor: colors.border.default, marginVertical: 24,
   },
-  removingBgText: { fontSize: 13, color: '#666', letterSpacing: 1 },
+  removingBgText: { fontSize: 13, color: colors.text.placeholder, letterSpacing: 1 },
   preview: { marginVertical: 24 },
   previewImg: { width: '100%', aspectRatio: 9 / 16 },
   previewOverlay: {
@@ -198,7 +199,7 @@ const styles = StyleSheet.create({
   },
   previewChange: { fontSize: 14, color: '#aaaaaa', letterSpacing: 1 },
   bottom: {},
-  btn: { backgroundColor: '#9CE41C', paddingVertical: 18, alignItems: 'center' },
+  btn: { backgroundColor: colors.brand.primary, paddingVertical: 18, alignItems: 'center' },
   btnDisabled: { opacity: 0.5 },
-  btnText: { color: '#0a0a0a', fontWeight: '800', fontSize: 14, letterSpacing: 2 },
+  btnText: { color: colors.text.onBrand, fontWeight: '800', fontSize: 14, letterSpacing: 2 },
 });

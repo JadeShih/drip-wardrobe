@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { View, Text, StyleSheet, Animated } from 'react-native';
+import { colors } from '@/constants/tokens';
 import { Audio } from 'expo-av';
 
 const CHARS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789#@!$%&*';
@@ -160,7 +161,7 @@ export default function DripSplash({ onFinished }: Props) {
 const styles = StyleSheet.create({
   container: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: '#0a0a0a',
+    backgroundColor: colors.background.primary,
     alignItems: 'center',
     justifyContent: 'center',
     zIndex: 9999,
@@ -177,13 +178,13 @@ const styles = StyleSheet.create({
   letter: {
     fontSize: 72,
     fontWeight: '900',
-    color: '#2a2a2a',
+    color: colors.border.subtle,
     letterSpacing: -2,
     lineHeight: 80,
     width: 48,
     textAlign: 'center',
   },
-  letterLocked: { color: '#ffffff' },
+  letterLocked: { color: colors.text.primary },
   lineContainer: { height: 4, width: '100%', overflow: 'hidden', marginTop: 6 },
-  line: { height: 4, backgroundColor: '#9CE41C' },
+  line: { height: 4, backgroundColor: colors.brand.primary },
 });

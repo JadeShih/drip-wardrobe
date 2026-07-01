@@ -4,6 +4,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { useAuth } from '@/context/AuthContext';
 import { supabase } from '@/lib/supabase';
+import { colors } from '@/constants/tokens';
 
 const { width } = Dimensions.get('window');
 
@@ -106,26 +107,26 @@ export default function StyleQuizScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#0a0a0a', paddingHorizontal: 24 },
+  container: { flex: 1, backgroundColor: colors.background.primary, paddingHorizontal: 24 },
   header: { marginTop: 16, marginBottom: 32, gap: 12 },
   headerTop: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  back: { fontSize: 14, color: '#9CE41C', fontWeight: '700', letterSpacing: 1 },
-  progress: { fontSize: 14, color: '#666666', letterSpacing: 2 },
+  back: { fontSize: 14, color: colors.brand.primary, fontWeight: '700', letterSpacing: 1 },
+  progress: { fontSize: 14, color: colors.text.placeholder, letterSpacing: 2 },
   progressBar: { flexDirection: 'row', gap: 6 },
-  progressDot: { flex: 1, height: 2, backgroundColor: '#222' },
-  progressDotActive: { backgroundColor: '#9CE41C' },
+  progressDot: { flex: 1, height: 2, backgroundColor: colors.border.default },
+  progressDotActive: { backgroundColor: colors.brand.primary },
   question: {
-    fontSize: 32, fontWeight: '900', color: '#fff',
+    fontSize: 32, fontWeight: '900', color: colors.text.primary,
     letterSpacing: -0.5, lineHeight: 36, marginBottom: 32,
   },
   cards: { flex: 1, gap: 12, paddingBottom: 40 },
   card: {
     flex: 1, justifyContent: 'flex-end', padding: 24,
-    borderWidth: 1, borderColor: '#1a1a1a',
+    borderWidth: 1, borderColor: colors.background.elevated,
   },
   cardAccent: { position: 'absolute', top: 0, left: 0, right: 0, height: 3 },
   cardLabelEn: { fontSize: 22, fontWeight: '900', letterSpacing: 2 },
   cardLabelZh: { fontSize: 14, fontWeight: '600', letterSpacing: 1, marginTop: 4 },
   orContainer: { alignItems: 'center' },
-  or: { fontSize: 14, color: '#555555', letterSpacing: 2 },
+  or: { fontSize: 14, color: colors.text.disabled, letterSpacing: 2 },
 });

@@ -9,6 +9,7 @@ import { useAuth } from '@/context/AuthContext';
 import { supabase } from '@/lib/supabase';
 import { getSignedUrl } from '@/lib/storage';
 import { IconSymbol } from '@/components/ui/icon-symbol';
+import { colors } from '@/constants/tokens';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const CARD_WIDTH = (SCREEN_WIDTH - 32) / 2.6;
@@ -53,15 +54,15 @@ function ItemCard({
         {item.photo_url ? (
           <Image source={{ uri: item.photo_url }} style={StyleSheet.absoluteFill} resizeMode="cover" />
         ) : (
-          <IconSymbol name="tshirt" size={36} color="#2a2a2a" />
+          <IconSymbol name="tshirt" size={36} color={colors.border.subtle} />
         )}
         {/* Action overlay */}
         <View style={styles.cardActions}>
           <TouchableOpacity style={styles.actionBtn} onPress={onEdit}>
-            <IconSymbol name="pencil" size={14} color="#fff" />
+            <IconSymbol name="pencil" size={14} color={colors.text.primary} />
           </TouchableOpacity>
           <TouchableOpacity style={[styles.actionBtn, styles.actionBtnDelete]} onPress={onDelete}>
-            <IconSymbol name="trash" size={14} color="#ff4444" />
+            <IconSymbol name="trash" size={14} color={colors.feedback.error} />
           </TouchableOpacity>
         </View>
       </View>
@@ -158,7 +159,7 @@ export default function WardrobeScreen() {
         </View>
         <View style={styles.emptyState}>
           <View style={styles.emptyIconWrap}>
-            <IconSymbol name="hanger" size={48} color="#2a2a2a" />
+            <IconSymbol name="hanger" size={48} color={colors.border.subtle} />
           </View>
           <Text style={styles.emptyTitle}>WARDROBE IS EMPTY</Text>
           <Text style={styles.emptyDesc}>
@@ -243,18 +244,18 @@ export default function WardrobeScreen() {
                       resizeMode="cover"
                     />
                   ) : (
-                    <IconSymbol name="tshirt" size={36} color="#2a2a2a" />
+                    <IconSymbol name="tshirt" size={36} color={colors.border.subtle} />
                   )}
                   {/* Action overlay */}
                   <View style={styles.cardActions}>
                     <TouchableOpacity style={styles.actionBtn} onPress={() => handleEdit(item)}>
-                      <IconSymbol name="pencil" size={14} color="#fff" />
+                      <IconSymbol name="pencil" size={14} color={colors.text.primary} />
                     </TouchableOpacity>
                     <TouchableOpacity
                       style={[styles.actionBtn, styles.actionBtnDelete]}
                       onPress={() => handleDelete(item)}
                     >
-                      <IconSymbol name="trash" size={14} color="#ff4444" />
+                      <IconSymbol name="trash" size={14} color={colors.feedback.error} />
                     </TouchableOpacity>
                   </View>
                 </View>
@@ -270,21 +271,21 @@ export default function WardrobeScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#0a0a0a' },
+  container: { flex: 1, backgroundColor: colors.background.primary },
 
   headerRow: {
     flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-end',
     paddingHorizontal: 16, paddingTop: 8, paddingBottom: 16,
   },
-  headerTitle: { fontSize: 28, fontWeight: '900', color: '#fff', letterSpacing: -0.5 },
-  headerCount: { fontSize: 13, color: '#666', letterSpacing: 2, fontWeight: '600', paddingBottom: 4 },
+  headerTitle: { fontSize: 28, fontWeight: '900', color: colors.text.primary, letterSpacing: -0.5 },
+  headerCount: { fontSize: 13, color: colors.text.placeholder, letterSpacing: 2, fontWeight: '600', paddingBottom: 4 },
 
   tabBar: { maxHeight: 44 },
   tabBarInner: { paddingHorizontal: 16 },
   tabItem: { marginRight: 24, paddingBottom: 10, position: 'relative' },
-  tabLabel: { fontSize: 13, fontWeight: '700', color: '#555', letterSpacing: 1.5 },
-  tabLabelActive: { color: '#fff' },
-  tabUnderline: { position: 'absolute', bottom: 0, left: 0, right: 0, height: 2, backgroundColor: '#9CE41C' },
+  tabLabel: { fontSize: 13, fontWeight: '700', color: colors.text.disabled, letterSpacing: 1.5 },
+  tabLabelActive: { color: colors.text.primary },
+  tabUnderline: { position: 'absolute', bottom: 0, left: 0, right: 0, height: 2, backgroundColor: colors.brand.primary },
   divider: { height: 1, backgroundColor: '#1c1c1c' },
 
   scrollContent: { paddingBottom: 40 },
@@ -295,20 +296,20 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16, paddingTop: 24, paddingBottom: 14,
   },
   sectionTitleRow: { flexDirection: 'row', alignItems: 'baseline' },
-  sectionTitleBold: { fontSize: 13, fontWeight: '900', color: '#fff', letterSpacing: 1 },
-  sectionTitleCat: { fontSize: 13, fontWeight: '700', color: '#9CE41C', letterSpacing: 1 },
-  viewAll: { fontSize: 11, color: '#666', letterSpacing: 1, textDecorationLine: 'underline' },
+  sectionTitleBold: { fontSize: 13, fontWeight: '900', color: colors.text.primary, letterSpacing: 1 },
+  sectionTitleCat: { fontSize: 13, fontWeight: '700', color: colors.brand.primary, letterSpacing: 1 },
+  viewAll: { fontSize: 11, color: colors.text.placeholder, letterSpacing: 1, textDecorationLine: 'underline' },
   hList: { paddingHorizontal: 16 },
-  sectionDivider: { height: 1, backgroundColor: '#1a1a1a', marginTop: 20 },
+  sectionDivider: { height: 1, backgroundColor: colors.background.elevated, marginTop: 20 },
 
   // Card (horizontal)
   card: { width: CARD_WIDTH },
   cardImg: {
     width: CARD_WIDTH, height: CARD_IMG_HEIGHT,
-    backgroundColor: '#111', alignItems: 'center', justifyContent: 'center', overflow: 'hidden',
+    backgroundColor: colors.background.card, alignItems: 'center', justifyContent: 'center', overflow: 'hidden',
   },
   cardInfo: { paddingTop: 6, gap: 2 },
-  cardName: { fontSize: 13, color: '#fff', fontWeight: '700' },
+  cardName: { fontSize: 13, color: colors.text.primary, fontWeight: '700' },
   cardBrand: { fontSize: 12, color: '#777' },
 
   // Action overlay (shared by card + grid)
@@ -327,23 +328,23 @@ const styles = StyleSheet.create({
   gridCell: { width: (SCREEN_WIDTH - 42) / 2, marginBottom: 20 },
   gridImg: {
     width: '100%', aspectRatio: 3 / 4,
-    backgroundColor: '#111', alignItems: 'center', justifyContent: 'center',
+    backgroundColor: colors.background.card, alignItems: 'center', justifyContent: 'center',
     overflow: 'hidden', marginBottom: 8,
   },
-  metaName: { fontSize: 13, color: '#fff', fontWeight: '700', marginBottom: 2 },
+  metaName: { fontSize: 13, color: colors.text.primary, fontWeight: '700', marginBottom: 2 },
   metaBrand: { fontSize: 12, color: '#777' },
 
   // Empty state
   emptyState: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 16, paddingBottom: 80 },
   emptyIconWrap: {
-    width: 80, height: 80, backgroundColor: '#111',
+    width: 80, height: 80, backgroundColor: colors.background.card,
     alignItems: 'center', justifyContent: 'center', marginBottom: 8,
   },
-  emptyTitle: { fontSize: 16, fontWeight: '900', color: '#fff', letterSpacing: 2 },
-  emptyDesc: { fontSize: 14, color: '#555', textAlign: 'center', lineHeight: 22 },
+  emptyTitle: { fontSize: 16, fontWeight: '900', color: colors.text.primary, letterSpacing: 2 },
+  emptyDesc: { fontSize: 14, color: colors.text.disabled, textAlign: 'center', lineHeight: 22 },
   emptyBtn: {
-    marginTop: 8, backgroundColor: '#9CE41C',
+    marginTop: 8, backgroundColor: colors.brand.primary,
     paddingHorizontal: 32, paddingVertical: 14,
   },
-  emptyBtnText: { color: '#0a0a0a', fontWeight: '800', fontSize: 14, letterSpacing: 2 },
+  emptyBtnText: { color: colors.text.onBrand, fontWeight: '800', fontSize: 14, letterSpacing: 2 },
 });

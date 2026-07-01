@@ -1,6 +1,7 @@
 import { useEffect, useRef } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, Animated } from 'react-native';
 import { router } from 'expo-router';
+import { colors } from '@/constants/tokens';
 
 export default function CompleteScreen() {
   const lineWidth   = useRef(new Animated.Value(0)).current;
@@ -62,32 +63,32 @@ export default function CompleteScreen() {
 
 const styles = StyleSheet.create({
   container: {
-    flex: 1, backgroundColor: '#0a0a0a',
+    flex: 1, backgroundColor: colors.background.primary,
     paddingHorizontal: 24,
     justifyContent: 'center',
   },
   logoArea: { marginBottom: 48 },
   logo: {
-    fontSize: 64, fontWeight: '900', color: '#fff',
+    fontSize: 64, fontWeight: '900', color: colors.text.primary,
     letterSpacing: 8, marginBottom: 12,
   },
   lineContainer: { height: 4, overflow: 'hidden', width: '100%' },
-  line: { height: 4, backgroundColor: '#9CE41C' },
+  line: { height: 4, backgroundColor: colors.brand.primary },
   content: {},
   title: {
-    fontSize: 36, fontWeight: '900', color: '#fff',
+    fontSize: 36, fontWeight: '900', color: colors.text.primary,
     letterSpacing: -0.5, marginBottom: 16,
   },
   desc: {
-    fontSize: 16, color: '#666', lineHeight: 26,
+    fontSize: 16, color: colors.text.placeholder, lineHeight: 26,
     marginBottom: 48,
   },
   btn: {
-    backgroundColor: '#9CE41C',
+    backgroundColor: colors.brand.primary,
     paddingVertical: 18, alignItems: 'center',
   },
   btnText: {
-    color: '#0a0a0a', fontWeight: '800',
+    color: colors.text.onBrand, fontWeight: '800',
     fontSize: 14, letterSpacing: 2,
   },
 });

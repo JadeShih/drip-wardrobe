@@ -4,6 +4,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useAuth } from '@/context/AuthContext';
 import { supabase } from '@/lib/supabase';
+import { colors } from '@/constants/tokens';
 
 const GENDERS = [
   { value: 'female', label: '女性風格', desc: '女裝為主' },
@@ -140,11 +141,11 @@ export default function ProfileInfoScreen() {
             value={sel.height}
             onChangeText={v => set('height', v.replace(/[^0-9]/g, ''))}
             placeholder="165"
-            placeholderTextColor="#444"
+            placeholderTextColor={colors.text.disabled}
             keyboardType="number-pad"
             maxLength={3}
-            cursorColor="#9CE41C"
-            selectionColor="#9CE41C"
+            cursorColor={colors.brand.primary}
+            selectionColor={colors.brand.primary}
           />
           <Text style={styles.heightUnit}>cm</Text>
         </View>
@@ -171,7 +172,7 @@ export default function ProfileInfoScreen() {
           disabled={!canContinue || saving}
         >
           {saving
-            ? <ActivityIndicator color="#0a0a0a" />
+            ? <ActivityIndicator color={colors.text.onBrand} />
             : <Text style={styles.btnText}>下一步 →</Text>
           }
         </TouchableOpacity>
@@ -194,62 +195,62 @@ function SectionTitle({ text, required }: { text: string; required?: boolean }) 
 }
 const sectionTitleStyles = StyleSheet.create({
   row: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 12 },
-  text: { fontSize: 13, color: '#9CE41C', letterSpacing: 2, fontWeight: '800' },
-  req: { fontSize: 11, color: '#0a0a0a', letterSpacing: 1, fontWeight: '700', backgroundColor: '#9CE41C', paddingHorizontal: 6, paddingVertical: 2 },
+  text: { fontSize: 13, color: colors.brand.primary, letterSpacing: 2, fontWeight: '800' },
+  req: { fontSize: 11, color: colors.text.onBrand, letterSpacing: 1, fontWeight: '700', backgroundColor: colors.brand.primary, paddingHorizontal: 6, paddingVertical: 2 },
 });
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#0a0a0a' },
+  container: { flex: 1, backgroundColor: colors.background.primary },
   inner: { paddingHorizontal: 24, paddingBottom: 48 },
   backBtn: { marginTop: 16, marginBottom: 8 },
-  backText: { fontSize: 14, color: '#9CE41C', fontWeight: '700', letterSpacing: 1 },
-  label: { fontSize: 14, color: '#9CE41C', letterSpacing: 2, marginTop: 24, marginBottom: 16 },
-  title: { fontSize: 36, fontWeight: '900', color: '#fff', letterSpacing: -0.5, lineHeight: 40, marginBottom: 12 },
-  desc: { fontSize: 14, color: '#555', lineHeight: 22, marginBottom: 36 },
+  backText: { fontSize: 14, color: colors.brand.primary, fontWeight: '700', letterSpacing: 1 },
+  label: { fontSize: 14, color: colors.brand.primary, letterSpacing: 2, marginTop: 24, marginBottom: 16 },
+  title: { fontSize: 36, fontWeight: '900', color: colors.text.primary, letterSpacing: -0.5, lineHeight: 40, marginBottom: 12 },
+  desc: { fontSize: 14, color: colors.text.disabled, lineHeight: 22, marginBottom: 36 },
 
   // Height input
   heightRow: { flexDirection: 'row', alignItems: 'center', gap: 12, marginBottom: 32 },
   heightInput: {
     borderWidth: 1, borderColor: '#333',
     paddingHorizontal: 16, paddingVertical: 14,
-    fontSize: 20, color: '#fff', fontWeight: '700',
+    fontSize: 20, color: colors.text.primary, fontWeight: '700',
     width: 100, textAlign: 'center',
   },
-  heightUnit: { fontSize: 16, color: '#666', letterSpacing: 1 },
+  heightUnit: { fontSize: 16, color: colors.text.placeholder, letterSpacing: 1 },
 
   // Cards (3 column)
   cardRow: { flexDirection: 'row', gap: 10, marginBottom: 32 },
-  card: { flex: 1, borderWidth: 1, borderColor: '#222', padding: 14, gap: 4 },
-  cardActive: { borderColor: '#9CE41C', backgroundColor: 'rgba(156,228,28,0.08)' },
+  card: { flex: 1, borderWidth: 1, borderColor: colors.border.default, padding: 14, gap: 4 },
+  cardActive: { borderColor: colors.brand.primary, backgroundColor: 'rgba(156,228,28,0.08)' },
   cardLabel: { fontSize: 13, fontWeight: '800', color: '#aaa', letterSpacing: 0.3 },
-  cardLabelActive: { color: '#9CE41C' },
-  cardDesc: { fontSize: 11, color: '#666' },
-  cardDescActive: { color: '#999' },
+  cardLabelActive: { color: colors.brand.primary },
+  cardDesc: { fontSize: 11, color: colors.text.placeholder },
+  cardDescActive: { color: colors.text.label },
 
   // Chips (wrapping)
   chipRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 10, marginBottom: 32 },
-  chip: { borderWidth: 1, borderColor: '#222', paddingHorizontal: 16, paddingVertical: 10, gap: 3 },
-  chipActive: { borderColor: '#9CE41C', backgroundColor: 'rgba(156,228,28,0.08)' },
+  chip: { borderWidth: 1, borderColor: colors.border.default, paddingHorizontal: 16, paddingVertical: 10, gap: 3 },
+  chipActive: { borderColor: colors.brand.primary, backgroundColor: 'rgba(156,228,28,0.08)' },
   chipLabel: { fontSize: 13, fontWeight: '700', color: '#aaa' },
-  chipLabelActive: { color: '#9CE41C' },
-  chipDesc: { fontSize: 11, color: '#666' },
-  chipDescActive: { color: '#888' },
+  chipLabelActive: { color: colors.brand.primary },
+  chipDesc: { fontSize: 11, color: colors.text.placeholder },
+  chipDescActive: { color: colors.text.secondary },
 
   // Small chips
   smallChipRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 10, marginBottom: 32 },
-  smallChip: { borderWidth: 1, borderColor: '#222', paddingHorizontal: 18, paddingVertical: 10, flexDirection: 'row', alignItems: 'center', gap: 8 },
+  smallChip: { borderWidth: 1, borderColor: colors.border.default, paddingHorizontal: 18, paddingVertical: 10, flexDirection: 'row', alignItems: 'center', gap: 8 },
   smallChipLabel: { fontSize: 13, color: '#aaa', letterSpacing: 0.5 },
   skinDot: { width: 18, height: 18, borderRadius: 9 },
 
   // Optional divider
   optionalDivider: { flexDirection: 'row', alignItems: 'center', gap: 12, marginBottom: 32 },
-  optionalLine: { flex: 1, height: 1, backgroundColor: '#2a2a2a' },
-  optionalText: { fontSize: 11, color: '#555', letterSpacing: 0.5 },
+  optionalLine: { flex: 1, height: 1, backgroundColor: colors.border.subtle },
+  optionalText: { fontSize: 11, color: colors.text.disabled, letterSpacing: 0.5 },
 
   // Buttons
-  btn: { backgroundColor: '#9CE41C', paddingVertical: 18, alignItems: 'center', marginBottom: 16 },
+  btn: { backgroundColor: colors.brand.primary, paddingVertical: 18, alignItems: 'center', marginBottom: 16 },
   btnDisabled: { opacity: 0.35 },
-  btnText: { color: '#0a0a0a', fontWeight: '800', fontSize: 14, letterSpacing: 2 },
+  btnText: { color: colors.text.onBrand, fontWeight: '800', fontSize: 14, letterSpacing: 2 },
   skipBtn: { alignItems: 'center', paddingVertical: 8 },
-  skipText: { fontSize: 14, color: '#444', letterSpacing: 1 },
+  skipText: { fontSize: 14, color: colors.text.disabled, letterSpacing: 1 },
 });

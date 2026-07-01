@@ -10,6 +10,7 @@ import { useAuth } from '@/context/AuthContext';
 import { supabase } from '@/lib/supabase';
 import { getSignedUrl } from '@/lib/storage';
 import { IconSymbol } from '@/components/ui/icon-symbol';
+import { colors } from '@/constants/tokens';
 
 const CATEGORIES = ['上衣', '下著', '外套', '鞋子', '配件'];
 
@@ -105,7 +106,7 @@ export default function ItemEditScreen() {
   if (loading) {
     return (
       <SafeAreaView style={styles.container}>
-        <ActivityIndicator color="#9CE41C" style={{ marginTop: 80 }} />
+        <ActivityIndicator color={colors.brand.primary} style={{ marginTop: 80 }} />
       </SafeAreaView>
     );
   }
@@ -133,12 +134,12 @@ export default function ItemEditScreen() {
             {/* Change photo actions */}
             <View style={styles.previewActions}>
               <TouchableOpacity style={styles.previewBtn} onPress={takePhoto}>
-                <IconSymbol name="camera.fill" size={16} color="#9CE41C" />
+                <IconSymbol name="camera.fill" size={16} color={colors.brand.primary} />
                 <Text style={styles.previewBtnText}>拍攝</Text>
               </TouchableOpacity>
               <View style={styles.previewDivider} />
               <TouchableOpacity style={styles.previewBtn} onPress={pickPhoto}>
-                <IconSymbol name="photo.on.rectangle" size={16} color="#9CE41C" />
+                <IconSymbol name="photo.on.rectangle" size={16} color={colors.brand.primary} />
                 <Text style={styles.previewBtnText}>從相簿選擇</Text>
               </TouchableOpacity>
             </View>
@@ -146,11 +147,11 @@ export default function ItemEditScreen() {
         ) : (
           <View style={styles.photoActions}>
             <TouchableOpacity style={styles.photoBtn} onPress={takePhoto}>
-              <IconSymbol name="camera.fill" size={28} color="#9CE41C" />
+              <IconSymbol name="camera.fill" size={28} color={colors.brand.primary} />
               <Text style={styles.photoBtnText}>拍攝照片</Text>
             </TouchableOpacity>
             <TouchableOpacity style={styles.photoBtn} onPress={pickPhoto}>
-              <IconSymbol name="photo.on.rectangle" size={28} color="#9CE41C" />
+              <IconSymbol name="photo.on.rectangle" size={28} color={colors.brand.primary} />
               <Text style={styles.photoBtnText}>從相簿選擇</Text>
             </TouchableOpacity>
           </View>
@@ -163,9 +164,9 @@ export default function ItemEditScreen() {
           value={name}
           onChangeText={setName}
           placeholder="例：白色牛津衫"
-          placeholderTextColor="#444"
-          cursorColor="#9CE41C"
-          selectionColor="#9CE41C"
+          placeholderTextColor={colors.text.disabled}
+          cursorColor={colors.brand.primary}
+          selectionColor={colors.brand.primary}
         />
 
         {/* Brand */}
@@ -175,9 +176,9 @@ export default function ItemEditScreen() {
           value={brand}
           onChangeText={setBrand}
           placeholder="例：Uniqlo"
-          placeholderTextColor="#444"
-          cursorColor="#9CE41C"
-          selectionColor="#9CE41C"
+          placeholderTextColor={colors.text.disabled}
+          cursorColor={colors.brand.primary}
+          selectionColor={colors.brand.primary}
         />
 
         {/* Category */}
@@ -200,7 +201,7 @@ export default function ItemEditScreen() {
           disabled={!name.trim() || !category || saving}
         >
           {saving
-            ? <ActivityIndicator color="#0a0a0a" />
+            ? <ActivityIndicator color={colors.text.onBrand} />
             : <Text style={styles.saveBtnText}>儲存變更 →</Text>
           }
         </TouchableOpacity>
@@ -210,49 +211,49 @@ export default function ItemEditScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#0a0a0a' },
+  container: { flex: 1, backgroundColor: colors.background.primary },
   inner: { paddingHorizontal: 24, paddingBottom: 40 },
   header: { marginTop: 16, marginBottom: 32 },
-  back: { fontSize: 14, color: '#9CE41C', fontWeight: '700', letterSpacing: 1 },
-  stepLabel: { fontSize: 14, color: '#666666', letterSpacing: 2, marginBottom: 8 },
-  title: { fontSize: 28, fontWeight: '900', color: '#fff', letterSpacing: -0.5, marginBottom: 32 },
-  fieldLabel: { fontSize: 14, color: '#666666', letterSpacing: 2, marginBottom: 12 },
+  back: { fontSize: 14, color: colors.brand.primary, fontWeight: '700', letterSpacing: 1 },
+  stepLabel: { fontSize: 14, color: colors.text.placeholder, letterSpacing: 2, marginBottom: 8 },
+  title: { fontSize: 28, fontWeight: '900', color: colors.text.primary, letterSpacing: -0.5, marginBottom: 32 },
+  fieldLabel: { fontSize: 14, color: colors.text.placeholder, letterSpacing: 2, marginBottom: 12 },
 
   // Photo — no existing photo
   photoActions: { flexDirection: 'row', gap: 12, marginBottom: 28 },
   photoBtn: {
-    flex: 1, borderWidth: 1, borderColor: '#555555', borderStyle: 'dashed',
+    flex: 1, borderWidth: 1, borderColor: colors.border.dashed, borderStyle: 'dashed',
     paddingVertical: 36, alignItems: 'center', gap: 10,
   },
-  photoBtnText: { fontSize: 14, color: '#888888', letterSpacing: 1 },
+  photoBtnText: { fontSize: 14, color: colors.text.secondary, letterSpacing: 1 },
 
   // Photo — has photo
   previewWrap: { marginBottom: 28 },
-  previewImg: { width: '100%', height: 260, resizeMode: 'cover', backgroundColor: '#111' },
+  previewImg: { width: '100%', height: 260, resizeMode: 'cover', backgroundColor: colors.background.card },
   previewActions: {
-    flexDirection: 'row', borderWidth: 1, borderColor: '#222',
+    flexDirection: 'row', borderWidth: 1, borderColor: colors.border.default,
     borderTopWidth: 0,
   },
   previewBtn: {
     flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
     gap: 8, paddingVertical: 12,
   },
-  previewBtnText: { fontSize: 14, color: '#888888', letterSpacing: 1 },
-  previewDivider: { width: 1, backgroundColor: '#222' },
+  previewBtnText: { fontSize: 14, color: colors.text.secondary, letterSpacing: 1 },
+  previewDivider: { width: 1, backgroundColor: colors.border.default },
 
   input: {
     borderWidth: 1, borderColor: '#333333',
     paddingHorizontal: 16, paddingVertical: 14,
-    fontSize: 14, color: '#fff', marginBottom: 24, letterSpacing: 0.5,
+    fontSize: 14, color: colors.text.primary, marginBottom: 24, letterSpacing: 0.5,
   },
 
   chips: { flexDirection: 'row', flexWrap: 'wrap', gap: 10, marginBottom: 40 },
   chip: { paddingHorizontal: 20, paddingVertical: 12, borderWidth: 1, borderColor: '#333333' },
-  chipActive: { borderColor: '#9CE41C', backgroundColor: '#9CE41C' },
-  chipText: { fontSize: 14, color: '#888888', letterSpacing: 1 },
-  chipTextActive: { color: '#0a0a0a', fontWeight: '800' },
+  chipActive: { borderColor: colors.brand.primary, backgroundColor: colors.brand.primary },
+  chipText: { fontSize: 14, color: colors.text.secondary, letterSpacing: 1 },
+  chipTextActive: { color: colors.text.onBrand, fontWeight: '800' },
 
-  saveBtn: { backgroundColor: '#9CE41C', paddingVertical: 18, alignItems: 'center' },
+  saveBtn: { backgroundColor: colors.brand.primary, paddingVertical: 18, alignItems: 'center' },
   saveBtnDisabled: { opacity: 0.35 },
-  saveBtnText: { color: '#0a0a0a', fontWeight: '800', fontSize: 14, letterSpacing: 2 },
+  saveBtnText: { color: colors.text.onBrand, fontWeight: '800', fontSize: 14, letterSpacing: 2 },
 });

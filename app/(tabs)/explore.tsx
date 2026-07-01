@@ -7,6 +7,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useAuth } from '@/context/AuthContext';
 import { supabase } from '@/lib/supabase';
 import { IconSymbol } from '@/components/ui/icon-symbol';
+import { colors } from '@/constants/tokens';
 
 type UserProfile = {
   gender?: string | null;
@@ -267,7 +268,7 @@ export default function ExploreScreen() {
               '通用模特兒展示，非個人照片',
             ].map((f, i) => (
               <View key={i} style={[styles.featureRow, i === 3 && { marginTop: 4 }]}>
-                <View style={[styles.featureDot, i === 3 && { backgroundColor: '#444' }]} />
+                <View style={[styles.featureDot, i === 3 && { backgroundColor: colors.text.disabled }]} />
                 <Text style={[styles.featureText, i === 3 && { color: '#555', fontSize: 12 }]}>{f}</Text>
               </View>
             ))}
@@ -302,7 +303,7 @@ export default function ExploreScreen() {
                 style={[styles.chip, occasion === o.label && styles.chipActive]}
                 onPress={() => setOccasion(o.label)}
               >
-                <IconSymbol name={o.icon as any} size={14} color={occasion === o.label ? '#0a0a0a' : '#666'} />
+                <IconSymbol name={o.icon as any} size={14} color={occasion === o.label ? colors.text.onBrand : colors.text.placeholder} />
                 <Text style={[styles.chipText, occasion === o.label && styles.chipTextActive]}>{o.label}</Text>
               </TouchableOpacity>
             ))}
@@ -316,7 +317,7 @@ export default function ExploreScreen() {
                 style={[styles.chip, vibe === v.label && styles.chipActive]}
                 onPress={() => setVibe(v.label)}
               >
-                <IconSymbol name={v.icon as any} size={14} color={vibe === v.label ? '#0a0a0a' : '#666'} />
+                <IconSymbol name={v.icon as any} size={14} color={vibe === v.label ? colors.text.onBrand : colors.text.placeholder} />
                 <Text style={[styles.chipText, vibe === v.label && styles.chipTextActive]}>{v.label}</Text>
               </TouchableOpacity>
             ))}
@@ -342,7 +343,7 @@ export default function ExploreScreen() {
       <SafeAreaView style={styles.container}>
         <View style={styles.generatingBox}>
           <Animated.View style={{ transform: [{ rotate }] }}>
-            <IconSymbol name="sparkles" size={36} color="#9CE41C" />
+            <IconSymbol name="sparkles" size={36} color={colors.brand.primary} />
           </Animated.View>
           <Text style={styles.generatingText}>造型師構思中</Text>
           <Text style={styles.generatingSub}>{occasion} × {vibe}</Text>
@@ -396,7 +397,7 @@ export default function ExploreScreen() {
               <View style={styles.cardImagePlaceholder}>
                 {outfit.imageGenerating && (
                   <>
-                    <ActivityIndicator color="#9CE41C" size="small" />
+                    <ActivityIndicator color={colors.brand.primary} size="small" />
                     <Text style={styles.cardImageLoading}>編輯圖生成中</Text>
                     <View style={styles.imgStepBox}>
                       <View style={styles.imgStepDot} />
@@ -438,79 +439,79 @@ export default function ExploreScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#0a0a0a' },
+  container: { flex: 1, backgroundColor: colors.background.primary },
 
   // Landing
   inner: { paddingHorizontal: 24, paddingBottom: 40 },
   header: { marginTop: 16, marginBottom: 32 },
-  logo: { fontSize: 14, color: '#9CE41C', letterSpacing: 6, fontWeight: '800' },
-  landingTag: { fontSize: 11, color: '#9CE41C', letterSpacing: 4, fontWeight: '900', marginBottom: 16 },
-  landingTitle: { fontSize: 40, fontWeight: '900', color: '#fff', letterSpacing: -1, lineHeight: 44, marginBottom: 20 },
-  landingDesc: { fontSize: 14, color: '#666', lineHeight: 22, marginBottom: 32 },
+  logo: { fontSize: 14, color: colors.brand.primary, letterSpacing: 6, fontWeight: '800' },
+  landingTag: { fontSize: 11, color: colors.brand.primary, letterSpacing: 4, fontWeight: '900', marginBottom: 16 },
+  landingTitle: { fontSize: 40, fontWeight: '900', color: colors.text.primary, letterSpacing: -1, lineHeight: 44, marginBottom: 20 },
+  landingDesc: { fontSize: 14, color: colors.text.placeholder, lineHeight: 22, marginBottom: 32 },
   featureList: { gap: 14, marginBottom: 40 },
   featureRow: { flexDirection: 'row', alignItems: 'center', gap: 12 },
-  featureDot: { width: 6, height: 6, backgroundColor: '#9CE41C' },
-  featureText: { fontSize: 14, color: '#888' },
+  featureDot: { width: 6, height: 6, backgroundColor: colors.brand.primary },
+  featureText: { fontSize: 14, color: colors.text.secondary },
 
   // Pick
   pickHeader: { paddingHorizontal: 24, paddingTop: 16, paddingBottom: 8 },
   pickInner: { paddingHorizontal: 24, paddingBottom: 16 },
   pickFooter: { paddingHorizontal: 24, paddingBottom: 32, paddingTop: 12 },
-  pickTitle: { fontSize: 36, fontWeight: '900', color: '#fff', letterSpacing: -0.5, lineHeight: 40, marginBottom: 32, marginTop: 8 },
-  sectionLabel: { fontSize: 11, color: '#9CE41C', letterSpacing: 3, fontWeight: '900', marginBottom: 14 },
+  pickTitle: { fontSize: 36, fontWeight: '900', color: colors.text.primary, letterSpacing: -0.5, lineHeight: 40, marginBottom: 32, marginTop: 8 },
+  sectionLabel: { fontSize: 11, color: colors.brand.primary, letterSpacing: 3, fontWeight: '900', marginBottom: 14 },
   chipGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10, marginBottom: 32 },
-  chip: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 16, paddingVertical: 10, borderWidth: 1, borderColor: '#2a2a2a' },
-  chipActive: { borderColor: '#9CE41C', backgroundColor: '#9CE41C' },
-  chipText: { fontSize: 13, color: '#666', letterSpacing: 0.5 },
-  chipTextActive: { color: '#0a0a0a', fontWeight: '800' },
+  chip: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 16, paddingVertical: 10, borderWidth: 1, borderColor: colors.border.subtle },
+  chipActive: { borderColor: colors.brand.primary, backgroundColor: colors.brand.primary },
+  chipText: { fontSize: 13, color: colors.text.placeholder, letterSpacing: 0.5 },
+  chipTextActive: { color: colors.text.onBrand, fontWeight: '800' },
 
   // Generating
   generatingBox: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 20 },
-  generatingText: { fontSize: 18, color: '#fff', fontWeight: '700', letterSpacing: 0.5 },
-  generatingSub: { fontSize: 14, color: '#555', letterSpacing: 2 },
+  generatingText: { fontSize: 18, color: colors.text.primary, fontWeight: '700', letterSpacing: 0.5 },
+  generatingSub: { fontSize: 14, color: colors.text.disabled, letterSpacing: 2 },
   genStepBox: {
     flexDirection: 'row', alignItems: 'center', gap: 8,
     marginTop: 8, paddingHorizontal: 20, paddingVertical: 10,
-    borderWidth: 1, borderColor: '#1e1e1e',
+    borderWidth: 1, borderColor: colors.border.subtle,
   },
-  genStepDot: { width: 5, height: 5, backgroundColor: '#9CE41C' },
-  genStepText: { fontSize: 13, color: '#666', letterSpacing: 1.5 },
+  genStepDot: { width: 5, height: 5, backgroundColor: colors.brand.primary },
+  genStepText: { fontSize: 13, color: colors.text.placeholder, letterSpacing: 1.5 },
 
   // Buttons
-  primaryBtn: { backgroundColor: '#9CE41C', paddingVertical: 18, alignItems: 'center' },
+  primaryBtn: { backgroundColor: colors.brand.primary, paddingVertical: 18, alignItems: 'center' },
   btnDisabled: { opacity: 0.35 },
-  primaryBtnText: { color: '#0a0a0a', fontWeight: '800', fontSize: 14, letterSpacing: 2 },
-  back: { fontSize: 14, color: '#9CE41C', fontWeight: '700', letterSpacing: 1 },
-  resetText: { fontSize: 14, color: '#555', letterSpacing: 1 },
+  primaryBtnText: { color: colors.text.onBrand, fontWeight: '800', fontSize: 14, letterSpacing: 2 },
+  back: { fontSize: 14, color: colors.brand.primary, fontWeight: '700', letterSpacing: 1 },
+  resetText: { fontSize: 14, color: colors.text.disabled, letterSpacing: 1 },
 
   // Result
   resultInner: { paddingHorizontal: 24, paddingBottom: 48 },
   resultHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 16, marginBottom: 24 },
-  resultTag: { fontSize: 11, color: '#9CE41C', letterSpacing: 4, fontWeight: '900', marginBottom: 8 },
-  resultTitle: { fontSize: 28, fontWeight: '900', color: '#fff', letterSpacing: -0.5, marginBottom: 32 },
+  resultTag: { fontSize: 11, color: colors.brand.primary, letterSpacing: 4, fontWeight: '900', marginBottom: 8 },
+  resultTitle: { fontSize: 28, fontWeight: '900', color: colors.text.primary, letterSpacing: -0.5, marginBottom: 32 },
 
   // Outfit card
   outfitCard: { marginBottom: 48 },
   cardIndexRow: { flexDirection: 'row', alignItems: 'center', gap: 12, marginBottom: 16 },
-  cardIndex: { fontSize: 13, color: '#9CE41C', fontWeight: '900', letterSpacing: 2 },
-  cardIndexLine: { flex: 1, height: 1, backgroundColor: '#1e1e1e' },
-  cardStyle: { fontSize: 11, color: '#555', letterSpacing: 2 },
-  cardImage: { width: '100%', aspectRatio: 2 / 3, backgroundColor: '#111', marginBottom: 20 },
+  cardIndex: { fontSize: 13, color: colors.brand.primary, fontWeight: '900', letterSpacing: 2 },
+  cardIndexLine: { flex: 1, height: 1, backgroundColor: colors.border.subtle },
+  cardStyle: { fontSize: 11, color: colors.text.disabled, letterSpacing: 2 },
+  cardImage: { width: '100%', aspectRatio: 2 / 3, backgroundColor: colors.background.card, marginBottom: 20 },
   cardImagePlaceholder: {
-    width: '100%', aspectRatio: 2 / 3, backgroundColor: '#111',
+    width: '100%', aspectRatio: 2 / 3, backgroundColor: colors.background.card,
     alignItems: 'center', justifyContent: 'center', gap: 12, marginBottom: 20,
   },
-  cardImageLoading: { fontSize: 12, color: '#555', letterSpacing: 1 },
+  cardImageLoading: { fontSize: 12, color: colors.text.disabled, letterSpacing: 1 },
   imgStepBox: { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 4 },
-  imgStepDot: { width: 4, height: 4, backgroundColor: '#9CE41C' },
-  imgStepText: { fontSize: 11, color: '#666', letterSpacing: 1 },
-  cardTitle: { fontSize: 22, fontWeight: '900', color: '#fff', letterSpacing: -0.3, marginBottom: 16 },
-  cardItems: { gap: 10, marginBottom: 16, borderLeftWidth: 1, borderLeftColor: '#1e1e1e', paddingLeft: 14 },
+  imgStepDot: { width: 4, height: 4, backgroundColor: colors.brand.primary },
+  imgStepText: { fontSize: 11, color: colors.text.placeholder, letterSpacing: 1 },
+  cardTitle: { fontSize: 22, fontWeight: '900', color: colors.text.primary, letterSpacing: -0.3, marginBottom: 16 },
+  cardItems: { gap: 10, marginBottom: 16, borderLeftWidth: 1, borderLeftColor: colors.border.subtle, paddingLeft: 14 },
   cardItemRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },
-  cardItemColorDot: { width: 5, height: 5, backgroundColor: '#9CE41C' },
-  cardItemCat: { fontSize: 11, color: '#9CE41C', letterSpacing: 1.5, width: 32 },
+  cardItemColorDot: { width: 5, height: 5, backgroundColor: colors.brand.primary },
+  cardItemCat: { fontSize: 11, color: colors.brand.primary, letterSpacing: 1.5, width: 32 },
   cardItemDesc: { fontSize: 14, color: '#aaa', flex: 1 },
-  cardNote: { backgroundColor: '#111', padding: 14, gap: 6 },
-  cardNoteLabel: { fontSize: 10, color: '#555', letterSpacing: 2 },
-  cardNoteText: { fontSize: 13, color: '#888', lineHeight: 20 },
+  cardNote: { backgroundColor: colors.background.card, padding: 14, gap: 6 },
+  cardNoteLabel: { fontSize: 10, color: colors.text.disabled, letterSpacing: 2 },
+  cardNoteText: { fontSize: 13, color: colors.text.secondary, lineHeight: 20 },
 });
