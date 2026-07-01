@@ -1,4 +1,4 @@
-import { useState, useCallback, useRef, useEffect } from 'react';
+import { useState, useCallback, useRef, useEffect, LayoutChangeEvent } from 'react';
 import {
   View, Text, TouchableOpacity, StyleSheet,
   Image, Dimensions, ActivityIndicator, ScrollView, Animated, Easing,
@@ -16,6 +16,7 @@ import { removeBackground } from '@/lib/background-removal';
 import { virtualTryOnReplicate } from '@/lib/virtual-tryon-replicate';
 import { IconSymbol } from '@/components/ui/icon-symbol';
 import Svg, { Path } from 'react-native-svg';
+import HomeTooltips from '@/components/HomeTooltips';
 
 const BODY_MODELS: Record<string, Record<string, any>> = {
   female: {
@@ -48,6 +49,7 @@ async function downloadToTemp(url: string): Promise<string> {
 }
 
 const APPLIED_OUTFIT_KEY = 'drip:appliedOutfit';
+const TOOLTIPS_KEY = 'drip:tooltipsShown';
 
 const { width: W } = Dimensions.get('window');
 
@@ -244,6 +246,8 @@ export default function HomeScreen() {
   const [bodyPhotoUrl, setBodyPhotoUrl] = useState<string | null>(null);
   const [userSex, setUserSex] = useState<string | null>(null);
   const [userBodyType, setUserBodyType] = useState<string | null>(null);
+  const [showTooltips, setShowTooltips] = useState(false);
+  const [btnLayout, setBtnLayout] = useState<{ x: number; y: number; width: number; height: number } | null>(null);
   const [wardrobeMap, setWardrobeMap] = useState<WardrobeMap>({});
   const [allItems, setAllItems] = useState<GridItem[]>([]);
   const [totalItems, setTotalItems] = useState(0);
@@ -384,6 +388,8 @@ export default function HomeScreen() {
         setWardrobeMap(map);
       }
       setLoading(false);
+      const seen = await AsyncStorage.getItem(TOOLTIPS_KEY);
+      if (!seen) setShowTooltips(true);
     })();
   }, [user]));
 
@@ -767,15 +773,46 @@ export default function HomeScreen() {
 
           {/* CTA */}
           {totalItems === 0 ? (
-            <TouchableOpacity style={styles.primaryBtn} onPress={() => router.push('/(tabs)/add')}>
-              <Text style={styles.primaryBtnText}>新增第一件衣物 →</Text>
+            <TouchableOpacity
+              style={styles.primaryBtn}
+              onPress={() => router.push('/(tabs)/add')}
+              onLayout={(e) => {
+                e.target.measure((x, y, width, height, pageX, pageY) => {
+                  setBtnLayout({ x: pageX, y: pageY, width, height });
+                });
+              }}
+            >
+              <Text style={styles.primaryBtnText}>{showTooltips ? '立即新增你的第一件服飾 →' : '新增第一件衣物 →'}</Text>
             </TouchableOpacity>
           ) : (
-            <TouchableOpacity style={styles.primaryBtn} onPress={() => { slideAnim.setValue(0); setStep('occasion'); }}>
+            <TouchableOpacity
+              style={styles.primaryBtn}
+              onPress={() => { slideAnim.setValue(0); setStep('occasion'); }}
+              onLayout={(e) => {
+                e.target.measure((x, y, width, height, pageX, pageY) => {
+                  setBtnLayout({ x: pageX, y: pageY, width, height });
+                });
+              }}
+            >
               <Text style={styles.primaryBtnText}>{appliedOutfit ? '重新生成穿搭 →' : '生成今日穿搭 →'}</Text>
             </TouchableOpacity>
           )}
         </View>
+
+        {/* Tooltips overlay */}
+        {showTooltips && btnLayout && (
+          <HomeTooltips
+            btnLayout={btnLayout}
+            onDone={() => {
+              setShowTooltips(false);
+              AsyncStorage.setItem(TOOLTIPS_KEY, '1');
+            }}
+            onSkip={() => {
+              setShowTooltips(false);
+              AsyncStorage.setItem(TOOLTIPS_KEY, '1');
+            }}
+          />
+        )}
       </SafeAreaView>
     );
   }
